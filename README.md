@@ -64,6 +64,20 @@ npm run tauri -- --help
 
 > 첫 `tauri:dev` / `tauri:build`는 Rust 의존성 컴파일 때문에 시간이 더 걸립니다. 이후에는 캐시되어 훨씬 빠릅니다.
 
+### 문제 해결: `cargo` / `program not found`
+
+Rust를 막 설치했다면 **터미널(또는 Cursor)을 한 번 종료했다가 다시 연 뒤** 재시도하세요.  
+`cargo`가 PATH에 없으면 Tauri가 위 오류를 냅니다.
+
+확인:
+
+```bash
+cargo --version
+```
+
+없으면 [rustup](https://rustup.rs/)으로 Rust를 설치하고, 설치 후 터미널을 재시작하세요.  
+이 프로젝트의 `npm run tauri:dev`는 `~/.cargo/bin`을 PATH에 자동으로 붙이도록 되어 있습니다.
+
 ## 폴더 구조
 
 ```

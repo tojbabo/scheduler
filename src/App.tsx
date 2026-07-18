@@ -1,32 +1,38 @@
 import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { SideNav } from "./layout/SideNav";
+import { StatusBar } from "./layout/StatusBar";
+import { Home } from "./pages/Home";
 import "./App.css";
 
-function App() {
-  const [status, setStatus] = useState("준비됨");
+const PAGE_TITLES: Record<string, string> = {
+  home: "홈",
+  schedule: "일정",
+  calendar: "캘린더",
+  settings: "설정",
+};
 
-  async function pingRust() {
-    const message = await invoke<string>("greet", { name: "Scheduler" });
-    setStatus(message);
-  }
+function App() {
+  const [activeMenu, setActiveMenu] = useState("home");
 
   return (
-    <main className="app">
-      <header className="app__header">
-        <p className="app__brand">Scheduler</p>
-        <h1 className="app__title">데스크톱 스케줄러</h1>
-        <p className="app__subtitle">
-          React + Tauri 기반 Windows 앱 기초 환경이 준비되었습니다.
-        </p>
-      </header>
+    <div className="shell">
+      <SideNav activeId={activeMenu} onSelect={setActiveMenu} />
 
-      <section className="app__panel">
-        <p className="app__status">{status}</p>
-        <button type="button" onClick={pingRust}>
-          Rust 브리지 확인
-        </button>
-      </section>
-    </main>
+      <div className="shell__main">
+        <StatusBar title={PAGE_TITLES[activeMenu] ?? "홈"} statusText="준비됨" />
+        <main className="shell__content">
+          {activeMenu === "home" ? (
+            <Home />
+          ) : (
+            <section className="home">
+              <p className="home__eyebrow">{PAGE_TITLES[activeMenu]}</p>
+              <h2 className="home__heading">{PAGE_TITLES[activeMenu]} 화면</h2>
+              <p className="home__copy">플레이스홀더 화면입니다.</p>
+            </section>
+          )}
+        </main>
+      </div>
+    </div>
   );
 }
 
