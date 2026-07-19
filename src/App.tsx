@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { SideNav } from "./layout/SideNav";
-import { StatusBar } from "./layout/StatusBar";
 import { Home } from "./pages/Home";
 import "./App.css";
 
@@ -19,7 +18,7 @@ function App() {
       <SideNav activeId={activeMenu} onSelect={setActiveMenu} />
 
       <div className="shell__main">
-        <StatusBar title={PAGE_TITLES[activeMenu] ?? "홈"} statusText="준비됨" />
+        <div className="shell__drag" data-tauri-drag-region aria-hidden="true" />
         <main className="shell__content">
           {activeMenu === "home" ? (
             <Home />

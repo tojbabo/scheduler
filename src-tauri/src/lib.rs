@@ -1,4 +1,8 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+mod db;
+
+use db::{db_status, init_database};
+use tauri::Manager;
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Rust 브리지 OK — {name}")
@@ -8,7 +12,12 @@ fn greet(name: &str) -> String {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .setup(|app| {
+            let database = init_database(app.handle())?;
+            app.manage(database);
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![greet, db_status])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
