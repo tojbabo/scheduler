@@ -200,12 +200,32 @@ button {
   transform: translateX(0);
 }
 
-/* —— Home —— */
-.home {
-  max-width: 40rem;
+/* —— Page layout (common head + body) —— */
+.page {
+  max-width: 48rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.home__eyebrow {
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-head__text {
+  min-width: 0;
+  flex: 1;
+}
+
+.page-head__actions {
+  flex: 0 0 auto;
+  padding-top: 0.15rem;
+}
+
+.page-head__eyebrow {
   margin: 0 0 0.4rem;
   font-size: 0.78rem;
   letter-spacing: 0.12em;
@@ -213,14 +233,173 @@ button {
   color: var(--accent);
 }
 
-.home__heading {
+.page-head__heading {
   margin: 0;
   font-size: 1.65rem;
   font-weight: 650;
   letter-spacing: -0.02em;
 }
 
-.home__copy {
+.page-head__copy {
   margin: 0.7rem 0 0;
   color: var(--muted);
+}
+
+.page__body {
+  min-width: 0;
+}
+
+.page__placeholder {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+/* —— Buttons —— */
+.btn {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn--primary {
+  color: #06110c;
+  background: var(--accent);
+}
+
+.btn--primary:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #fff);
+}
+
+.btn--ghost {
+  color: var(--text);
+  background: transparent;
+  border-color: var(--border);
+}
+
+.btn--ghost:hover {
+  background: rgba(232, 238, 244, 0.06);
+}
+
+/* —— Dialog (task create) —— */
+.dialog-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+
+.dialog {
+  position: relative;
+  z-index: 1;
+  width: min(28rem, 100%);
+  max-height: min(90vh, 40rem);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-elevated);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dialog__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.dialog__close {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+}
+
+.dialog__close:hover {
+  color: var(--text);
+  background: rgba(232, 238, 244, 0.06);
+}
+
+.dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field__label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 550;
+}
+
+.field__control {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 80%, #000);
+}
+
+.field__control:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.field__control--area {
+  resize: vertical;
+  min-height: 5.5rem;
+}
+
+.field__control:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 1px;
 }

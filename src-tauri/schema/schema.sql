@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     description TEXT,
     created_at TEXT NOT NULL,
     parent_id INTEGER,
-    state INTEGER NOT NULL DEFAULT 3,
+    state INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (parent_id) REFERENCES tasks (id) ON DELETE CASCADE,
     CHECK (state IN (0, 1, 2, 3, 4))
 );
