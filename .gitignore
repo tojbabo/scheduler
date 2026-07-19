@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .env
+
+# Local release copy at project root
+Scheduler.exe
+scheduler.exe

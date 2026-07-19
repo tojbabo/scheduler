@@ -39,9 +39,43 @@ npm run dev
 # 프론트엔드만 빌드 (TypeScript 검사 + Vite)
 npm run build
 
-# Tauri 데스크톱 앱 빌드 (설치 파일 생성)
+# Tauri 데스크톱 앱 빌드 (설치 파일 / .exe 생성)
 npm run tauri:build
 ```
+
+### 더블클릭용 스크립트 (권장)
+
+프로젝트 루트의 bat 파일을 더블클릭하면 됩니다.
+
+| 스크립트 | 하는 일 |
+|----------|---------|
+| `빌드.bat` | 앱을 빌드한 뒤 프로젝트 루트에 `Scheduler.exe` 생성 |
+| `실행.bat` | 프로젝트 루트의 `Scheduler.exe` 실행 (없으면 빌드 결과물로 시도) |
+
+같은 작업을 npm으로도 할 수 있습니다.
+
+```bash
+npm run app:build   # 빌드 → ./Scheduler.exe
+npm run app:run     # 실행만
+```
+
+평소 사용 흐름:
+
+1. 코드 수정 후 → `빌드.bat` 한 번
+2. 이후에는 → `실행.bat` 또는 `Scheduler.exe` 더블클릭
+
+### 빌드 산출물 직접 찾기
+
+`npm run tauri:build`만 실행한 경우:
+
+| 파일 | 경로 (대략) |
+|------|-------------|
+| 앱 실행 파일 | `src-tauri/target/release/scheduler.exe` |
+| 설치 프로그램 | `src-tauri/target/release/bundle/nsis/` |
+
+> 빌드는 Node + Rust + VS Build Tools가 있는 PC에서만 하면 됩니다.  
+> 코드 수정 후에는 다시 `빌드.bat`(또는 `npm run app:build`)를 실행해야 반영됩니다.  
+> `Scheduler.exe`는 로컬 산출물이라 git에 올리지 않습니다.
 
 ### 기타
 

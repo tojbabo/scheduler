@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "tauri": "node ./scripts/run-tauri.mjs",
     "tauri:dev": "node ./scripts/run-tauri.mjs dev",
-    "tauri:build": "node ./scripts/run-tauri.mjs build"
+    "tauri:build": "node ./scripts/run-tauri.mjs build",
+    "app:build": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-app.ps1",
+    "app:run": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/run-app.ps1"
   },
   "dependencies": {
     "react": "^19.1.0",
