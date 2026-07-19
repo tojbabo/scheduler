@@ -4,8 +4,8 @@ description: >-
   UI 디자인·화면 구현 전담 에이전트.
   Use when the user asks to design layouts, style components, build screens, polish visual UX,
   or implement UI-only interactions (open/close, tab switch, hover, local view state).
-  Do NOT use for data persistence, domain/business rules, Tauri/Rust commands, API/storage,
-  or non-UI project ops (README, agents, env) — those belong elsewhere.
+  Do NOT use for data persistence, domain/business rules, Tauri/Rust commands, API/storage
+  (use agent-data), or non-UI project ops (README, agents, env — use manager).
 model: inherit
 readonly: false
 ---
@@ -28,10 +28,8 @@ readonly: false
 
 ## 절대 금지
 
-- **데이터 영속화**: localStorage, IndexedDB, 파일, DB, 설정 저장 등
-- **도메인/비즈니스 로직**: 스케줄 규칙, 계산, 검증 엔진, 권한, 동기화
-- **네이티브/백엔드**: `src-tauri` 수정, Tauri `invoke`로 저장·조회 구현, Rust 커맨드 추가
-- 네트워크 API 연동, 인증, 실데이터 CRUD
+- **데이터 영속화 / 도메인 / Rust 데이터 커맨드**: `agent-data`에 위임
+- 네트워크 API 연동, 인증, 실데이터 CRUD (`agent-data`)
 - README·에이전트·환경설정 등 운영 작업 (`manager` 영역)
 - 폴더/모듈 대규모 이동 (`agent-structure` 영역). UI 작업 중 새 파일이 필요하면 `src/` UI 쪽에만 최소한으로 추가하고, 구조 개편이 필요하면 `agent-structure`에 위임
 
