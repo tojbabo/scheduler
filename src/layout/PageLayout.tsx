@@ -61,7 +61,7 @@ export function PageLayout({
 
   return (
     <section className="page">
-      <header className="page-head">
+      <header className="page-head" data-tauri-drag-region>
         <div className="page-head__text">
           <p className="page-head__eyebrow">{eyebrow}</p>
           <h2 className="page-head__heading">{title}</h2>

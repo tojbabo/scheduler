@@ -1,17 +1,20 @@
 :root {
-  --bg: #0f1419;
-  --bg-elevated: #151c24;
-  --bg-nav: #12181f;
-  --text: #e8eef4;
-  --muted: #9aabbc;
-  --accent: #3d9a7a;
-  --accent-soft: rgba(61, 154, 122, 0.16);
-  --danger: #c45b5b;
-  --danger-soft: rgba(196, 91, 91, 0.14);
-  --border: rgba(232, 238, 244, 0.1);
+  --bg: #f7f3eb;
+  --bg-elevated: #f3ede3;
+  --bg-nav: #ebe4d8;
+  --text: #3d3429;
+  --muted: #8a7b6a;
+  --accent: #9a7348;
+  --accent-soft: #e8ddd0;
+  --accent-hover: #86633c;
+  --danger: #b85c4a;
+  --danger-soft: #f3e0db;
+  --border: #d4c8b8;
+  --hover-tint: #e6dfd2;
+  --field-bg: #faf7f1;
   --nav-collapsed: 4.25rem;
   --nav-expanded: 14.5rem;
-  --drag-h: 1.75rem;
+  --drag-h: 3rem;
   --z-nav: 1000;
 
   font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
@@ -41,10 +44,7 @@ body,
 body {
   min-height: 100vh;
   overflow: hidden;
-  background:
-    radial-gradient(900px 420px at 0% 0%, rgba(61, 154, 122, 0.12), transparent 55%),
-    radial-gradient(700px 380px at 100% 0%, rgba(70, 110, 160, 0.1), transparent 50%),
-    var(--bg);
+  background: var(--bg);
 }
 
 button {
@@ -70,7 +70,6 @@ button {
   flex: 0 0 var(--drag-h);
   height: var(--drag-h);
   width: 100%;
-  cursor: grab;
 }
 
 .shell__content {
@@ -92,9 +91,8 @@ button {
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.85rem 0.55rem;
-  background: color-mix(in srgb, var(--bg-nav) 94%, #000);
+  background: var(--bg-nav);
   border-right: 1px solid var(--border);
-  box-shadow: 8px 0 28px rgba(0, 0, 0, 0.22);
   overflow: hidden;
   transition: width 0.22s ease;
 }
@@ -162,7 +160,7 @@ button {
 }
 
 .side-nav__item:hover {
-  background: rgba(232, 238, 244, 0.06);
+  background: var(--hover-tint);
   color: var(--text);
 }
 
@@ -173,7 +171,7 @@ button {
 
 .side-nav__quit:hover {
   background: var(--danger-soft);
-  color: #ef9a9a;
+  color: var(--danger);
 }
 
 .side-nav__icon {
@@ -202,7 +200,8 @@ button {
 
 /* —— Page layout (common head + body) —— */
 .page {
-  max-width: 48rem;
+  width: 100%;
+  max-width: none;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -213,16 +212,25 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+  cursor: grab;
+  -webkit-app-region: drag;
 }
 
 .page-head__text {
   min-width: 0;
   flex: 1;
+  pointer-events: none;
 }
 
 .page-head__actions {
   flex: 0 0 auto;
   padding-top: 0.15rem;
+  cursor: default;
+  -webkit-app-region: no-drag;
+}
+
+.page-head__actions .btn {
+  cursor: pointer;
 }
 
 .page-head__eyebrow {
@@ -265,7 +273,7 @@ button {
 }
 
 .page__status--error {
-  color: #ef9a9a;
+  color: #a0483a;
 }
 
 /* —— Task list (home) —— */
@@ -294,15 +302,15 @@ button {
   flex: 0 0 auto;
   margin-left: auto;
   align-self: flex-start;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2.625rem;
+  height: 2.625rem;
   padding: 0;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 1.15rem;
+  font-size: 1.725rem;
   line-height: 1;
   cursor: pointer;
   transition: color 0.15s ease, background-color 0.15s ease;
@@ -362,12 +370,12 @@ button {
 }
 
 .btn--primary {
-  color: #06110c;
+  color: #faf7f1;
   background: var(--accent);
 }
 
 .btn--primary:hover {
-  background: color-mix(in srgb, var(--accent) 85%, #fff);
+  background: var(--accent-hover);
 }
 
 .btn--ghost {
@@ -377,7 +385,7 @@ button {
 }
 
 .btn--ghost:hover {
-  background: rgba(232, 238, 244, 0.06);
+  background: var(--hover-tint);
 }
 
 /* —— Dialog (task create) —— */
@@ -396,7 +404,7 @@ button {
   border: 0;
   padding: 0;
   margin: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(61, 52, 41, 0.35);
   cursor: pointer;
 }
 
@@ -409,7 +417,7 @@ button {
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--bg-elevated);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px rgba(61, 52, 41, 0.12);
 }
 
 .dialog__header {
@@ -440,7 +448,7 @@ button {
 
 .dialog__close:hover {
   color: var(--text);
-  background: rgba(232, 238, 244, 0.06);
+  background: var(--hover-tint);
 }
 
 .dialog__form {
@@ -477,7 +485,7 @@ button {
   font: inherit;
   font-size: 0.92rem;
   color: var(--text);
-  background: color-mix(in srgb, var(--bg) 80%, #000);
+  background: var(--field-bg);
 }
 
 .field__control:disabled {
@@ -491,6 +499,6 @@ button {
 }
 
 .field__control:focus {
-  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
