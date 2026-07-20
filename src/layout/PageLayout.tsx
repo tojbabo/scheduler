@@ -20,8 +20,25 @@ export function PageLayout({
 }: PageLayoutProps) {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
-  function handleTaskSubmit(_draft: TaskCreateDraft) {
+  function handleTaskSubmit(draft: TaskCreateDraft) {
     // Persistence / id generation → agent-data
+    const fields = (
+      ["title", "description", "createdAt", "parentId", "state"] as const
+    ).map((key) => {
+      const value = draft[key];
+      const filled = value.trim().length > 0;
+      return { field: key, value, filled };
+    });
+
+    console.group("[TaskCreate] submit draft");
+    console.table(fields);
+    for (const { field, value, filled } of fields) {
+      console.log(
+        `  ${field}: filled=${filled}`,
+        filled ? value : "(empty)",
+      );
+    }
+    console.groupEnd();
   }
 
   return (
