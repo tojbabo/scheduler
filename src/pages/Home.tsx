@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listTasks, type Task } from "../bridge/db";
+import { deleteTask, listTasks, type Task } from "../bridge/db";
 import { PageLayout } from "../layout/PageLayout";
 
 type LoadState =
@@ -10,6 +10,8 @@ type LoadState =
 export function Home() {
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
   const [refreshKey, setRefreshKey] = useState(0);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +38,27 @@ export function Home() {
     setRefreshKey((key) => key + 1);
   }
 
+  function handleDelete(id: number) {
+    if (deletingId !== null) return;
+
+    setDeleteError(null);
+    setDeletingId(id);
+
+    void deleteTask(id)
+      .then(() => {
+        loadTasks();
+      })
+      .catch((err: unknown) => {
+        console.error("[TaskDelete] failed", err);
+        const message =
+          err instanceof Error ? err.message : "Task를 삭제하지 못했습니다.";
+        setDeleteError(message);
+      })
+      .finally(() => {
+        setDeletingId(null);
+      });
+  }
+
   return (
     <PageLayout
       eyebrow="Home"
@@ -50,6 +73,12 @@ export function Home() {
       {load.status === "error" ? (
         <p className="page__status page__status--error" role="alert">
           {load.message}
+        </p>
+      ) : null}
+
+      {deleteError ? (
+        <p className="page__status page__status--error" role="alert">
+          {deleteError}
         </p>
       ) : null}
 
@@ -87,6 +116,15 @@ export function Home() {
                   <dd>{task.state}</dd>
                 </div>
               </dl>
+              <button
+                type="button"
+                className="task-list__delete"
+                aria-label="삭제"
+                disabled={deletingId !== null}
+                onClick={() => handleDelete(task.id)}
+              >
+                ×
+              </button>
             </li>
           ))}
         </ul>
