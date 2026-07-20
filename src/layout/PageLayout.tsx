@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { createTaskFromUiDraft } from "../bridge/db";
 import {
   TaskCreateDialog,
   type TaskCreateDraft,
@@ -9,6 +10,8 @@ type PageLayoutProps = {
   title: string;
   description?: string;
   children?: ReactNode;
+  /** Called after a task is successfully created (e.g. refresh home list). */
+  onTaskCreated?: () => void;
 };
 
 /** Common page chrome: head (eyebrow / title / copy) + page-specific body. */
@@ -17,11 +20,12 @@ export function PageLayout({
   title,
   description,
   children,
+  onTaskCreated,
 }: PageLayoutProps) {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   function handleTaskSubmit(draft: TaskCreateDraft) {
-    // Persistence / id generation → agent-data
     const fields = (
       ["title", "description", "createdAt", "parentId", "state"] as const
     ).map((key) => {
@@ -39,6 +43,20 @@ export function PageLayout({
       );
     }
     console.groupEnd();
+
+    setCreateError(null);
+
+    void createTaskFromUiDraft(draft)
+      .then((task) => {
+        console.log("[TaskCreate] created", task);
+        onTaskCreated?.();
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : "Task를 추가하지 못했습니다.";
+        console.error("[TaskCreate] failed", err);
+        setCreateError(message);
+      });
   }
 
   return (
@@ -62,6 +80,12 @@ export function PageLayout({
           </button>
         </div>
       </header>
+
+      {createError ? (
+        <p className="page__status page__status--error" role="alert">
+          {createError}
+        </p>
+      ) : null}
 
       {children != null ? <div className="page__body">{children}</div> : null}
 
