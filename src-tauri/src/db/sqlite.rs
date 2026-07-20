@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use rusqlite::{params, Connection, OptionalExtension};
 
 use crate::db::error::DbError;
+use crate::db::event_model::EventDto;
 use crate::db::task_model::{NewTask, TaskDto};
 use crate::db::traits::Database;
 
@@ -46,6 +47,31 @@ impl Database for SqliteDatabase {
         self.path.display().to_string()
     }
 
+    fn list_tasks(&self) -> Result<Vec<TaskDto>, DbError> {
+        let conn = self.conn.lock()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, title, description, created_at, parent_id, state
+             FROM tasks
+             ORDER BY id ASC",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(TaskDto {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                description: row.get(2)?,
+                created_at: row.get(3)?,
+                parent_id: row.get(4)?,
+                state: row.get(5)?,
+            })
+        })?;
+
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row?);
+        }
+        Ok(out)
+    }
+
     fn create_task(&self, task: &NewTask) -> Result<TaskDto, DbError> {
         let conn = self.conn.lock()?;
 
@@ -85,5 +111,32 @@ impl Database for SqliteDatabase {
             parent_id: task.parent_id,
             state: task.state,
         })
+    }
+
+    fn list_events(&self) -> Result<Vec<EventDto>, DbError> {
+        let conn = self.conn.lock()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, created_at, updated_at, starts_at, ends_at, title, description, category_id
+             FROM events
+             ORDER BY starts_at IS NULL, starts_at ASC, id ASC",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(EventDto {
+                id: row.get(0)?,
+                created_at: row.get(1)?,
+                updated_at: row.get(2)?,
+                starts_at: row.get(3)?,
+                ends_at: row.get(4)?,
+                title: row.get(5)?,
+                description: row.get(6)?,
+                category_id: row.get(7)?,
+            })
+        })?;
+
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row?);
+        }
+        Ok(out)
     }
 }

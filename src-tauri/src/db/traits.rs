@@ -1,4 +1,5 @@
 use crate::db::error::DbError;
+use crate::db::event_model::EventDto;
 use crate::db::task_model::{NewTask, TaskDto};
 
 /// Backend-agnostic database handle.
@@ -13,6 +14,12 @@ pub trait Database: Send + Sync {
     /// Connection / file location summary for diagnostics.
     fn location(&self) -> String;
 
+    /// All tasks, ordered by id ascending (stable tree-friendly order).
+    fn list_tasks(&self) -> Result<Vec<TaskDto>, DbError>;
+
     /// Insert a task; `id` is assigned by AUTOINCREMENT.
     fn create_task(&self, task: &NewTask) -> Result<TaskDto, DbError>;
+
+    /// All events, ordered by starts_at (nulls last), then id.
+    fn list_events(&self) -> Result<Vec<EventDto>, DbError>;
 }

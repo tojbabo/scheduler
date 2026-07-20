@@ -1,6 +1,6 @@
 mod db;
 
-use db::{create_task, db_status, init_database};
+use db::{create_task, db_status, init_database, list_events, list_tasks};
 use tauri::Manager;
 
 #[tauri::command]
@@ -17,7 +17,13 @@ pub fn run() {
             app.manage(database);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, db_status, create_task])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            db_status,
+            list_tasks,
+            create_task,
+            list_events
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -17,6 +17,18 @@ export type Task = {
   state: number;
 };
 
+/** Persisted event row (`id` is DB-assigned). */
+export type Event = {
+  id: number;
+  createdAt: string;
+  updatedAt: string;
+  startsAt: string | null;
+  endsAt: string | null;
+  title: string;
+  description: string | null;
+  categoryId: number | null;
+};
+
 /**
  * Input for creating a task. `id` is omitted (AUTOINCREMENT).
  * - `description` empty/omitted → NULL
@@ -43,6 +55,11 @@ export type TaskUiDraft = {
 /** Check that the DB backend is up and schema was applied at startup. */
 export function getDbStatus(): Promise<DbStatus> {
   return invoke<DbStatus>("db_status");
+}
+
+/** All tasks, ordered by id ascending. */
+export function listTasks(): Promise<Task[]> {
+  return invoke<Task[]>("list_tasks");
 }
 
 /** Insert a task; returns the row including generated `id`. */
@@ -85,4 +102,9 @@ export function createTaskFromUiDraft(draft: TaskUiDraft): Promise<Task> {
     parentId,
     state,
   });
+}
+
+/** All events, ordered by starts_at (nulls last), then id. */
+export function listEvents(): Promise<Event[]> {
+  return invoke<Event[]>("list_events");
 }
