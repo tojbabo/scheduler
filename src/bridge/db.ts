@@ -43,6 +43,27 @@ export type CreateTaskInput = {
   state?: number | null;
 };
 
+/** Full update payload for a task. */
+export type UpdateTaskInput = {
+  id: number;
+  title: string;
+  description?: string | null;
+  createdAt: string;
+  parentId?: number | null;
+  state: number;
+};
+
+/** Full update payload for an event (`createdAt` is not changed). */
+export type UpdateEventInput = {
+  id: number;
+  title: string;
+  description?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  categoryId?: number | null;
+  updatedAt: string;
+};
+
 /** UI draft shape from TaskCreateDialog (all strings). */
 export type TaskUiDraft = {
   title: string;
@@ -65,6 +86,16 @@ export function listTasks(): Promise<Task[]> {
 /** Insert a task; returns the row including generated `id`. */
 export function createTask(input: CreateTaskInput): Promise<Task> {
   return invoke<Task>("create_task", { input });
+}
+
+/** Replace a task by id; returns the updated row. */
+export function updateTask(input: UpdateTaskInput): Promise<Task> {
+  return invoke<Task>("update_task", { input });
+}
+
+/** Delete a task by id (child tasks cascade). */
+export function deleteTask(id: number): Promise<void> {
+  return invoke<void>("delete_task", { id });
 }
 
 /**
@@ -107,4 +138,14 @@ export function createTaskFromUiDraft(draft: TaskUiDraft): Promise<Task> {
 /** All events, ordered by starts_at (nulls last), then id. */
 export function listEvents(): Promise<Event[]> {
   return invoke<Event[]>("list_events");
+}
+
+/** Replace an event by id; returns the updated row. */
+export function updateEvent(input: UpdateEventInput): Promise<Event> {
+  return invoke<Event>("update_event", { input });
+}
+
+/** Delete an event by id. */
+export function deleteEvent(id: number): Promise<void> {
+  return invoke<void>("delete_event", { id });
 }

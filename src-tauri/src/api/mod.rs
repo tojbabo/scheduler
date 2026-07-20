@@ -1,5 +1,5 @@
 pub mod event;
 pub mod task;
 
-pub use event::list_events;
-pub use task::{create_task, list_tasks};
+pub use event::{delete_event, list_events, update_event};
+pub use task::{create_task, delete_task, list_tasks, update_task};

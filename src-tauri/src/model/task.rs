@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::common::time::normalize_iso_timestamp;
 use crate::common::DbError;
 
 /// Values allowed by `tasks.state` CHECK constraint.
@@ -35,7 +36,21 @@ pub struct CreateTaskInput {
     pub state: Option<i64>,
 }
 
-/// Validated fields ready for the DB backend.
+/// Full update payload (PUT-style).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateTaskInput {
+    pub id: i64,
+    pub title: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    pub created_at: String,
+    #[serde(default)]
+    pub parent_id: Option<i64>,
+    pub state: i64,
+}
+
+/// Validated fields ready for the DB backend (insert).
 #[derive(Debug, Clone)]
 pub struct NewTask {
     pub title: String,
@@ -45,32 +60,60 @@ pub struct NewTask {
     pub state: i64,
 }
 
+/// Validated fields ready for the DB backend (update).
+#[derive(Debug, Clone)]
+pub struct TaskPatch {
+    pub id: i64,
+    pub title: String,
+    pub description: Option<String>,
+    pub created_at: String,
+    pub parent_id: Option<i64>,
+    pub state: i64,
+}
+
+fn normalize_title(title: &str) -> Result<String, DbError> {
+    let title = title.trim().to_string();
+    if title.is_empty() {
+        return Err(DbError::new("title is required"));
+    }
+    Ok(title)
+}
+
+fn normalize_description(description: Option<String>) -> Option<String> {
+    description
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+fn validate_parent_id(parent_id: Option<i64>, self_id: Option<i64>) -> Result<(), DbError> {
+    if let Some(parent_id) = parent_id {
+        if parent_id <= 0 {
+            return Err(DbError::new("parent_id must be a positive integer"));
+        }
+        if self_id == Some(parent_id) {
+            return Err(DbError::new("parent_id cannot reference the task itself"));
+        }
+    }
+    Ok(())
+}
+
+fn validate_state(state: i64) -> Result<(), DbError> {
+    if !(TASK_STATE_MIN..=TASK_STATE_MAX).contains(&state) {
+        return Err(DbError::new(format!(
+            "state must be between {TASK_STATE_MIN} and {TASK_STATE_MAX}"
+        )));
+    }
+    Ok(())
+}
+
 impl CreateTaskInput {
     pub fn into_new_task(self) -> Result<NewTask, DbError> {
-        let title = self.title.trim().to_string();
-        if title.is_empty() {
-            return Err(DbError::new("title is required"));
-        }
-
-        let description = self
-            .description
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty());
-
-        let created_at = normalize_created_at(&self.created_at)?;
-
-        if let Some(parent_id) = self.parent_id {
-            if parent_id <= 0 {
-                return Err(DbError::new("parent_id must be a positive integer"));
-            }
-        }
-
+        let title = normalize_title(&self.title)?;
+        let description = normalize_description(self.description);
+        let created_at = normalize_iso_timestamp(&self.created_at)?;
+        validate_parent_id(self.parent_id, None)?;
         let state = self.state.unwrap_or(TASK_STATE_DEFAULT);
-        if !(TASK_STATE_MIN..=TASK_STATE_MAX).contains(&state) {
-            return Err(DbError::new(format!(
-                "state must be between {TASK_STATE_MIN} and {TASK_STATE_MAX}"
-            )));
-        }
+        validate_state(state)?;
 
         Ok(NewTask {
             title,
@@ -82,24 +125,24 @@ impl CreateTaskInput {
     }
 }
 
-/// Accept `YYYY-MM-DDTHH:MM` (datetime-local) or full ISO with seconds.
-fn normalize_created_at(raw: &str) -> Result<String, DbError> {
-    let s = raw.trim();
-    if s.is_empty() {
-        return Err(DbError::new("created_at is required"));
-    }
+impl UpdateTaskInput {
+    pub fn into_patch(self) -> Result<TaskPatch, DbError> {
+        if self.id <= 0 {
+            return Err(DbError::new("id must be a positive integer"));
+        }
+        let title = normalize_title(&self.title)?;
+        let description = normalize_description(self.description);
+        let created_at = normalize_iso_timestamp(&self.created_at)?;
+        validate_parent_id(self.parent_id, Some(self.id))?;
+        validate_state(self.state)?;
 
-    // datetime-local: 2026-07-20T23:38
-    if s.len() == 16 && s.as_bytes().get(10) == Some(&b'T') {
-        return Ok(format!("{s}:00"));
+        Ok(TaskPatch {
+            id: self.id,
+            title,
+            description,
+            created_at,
+            parent_id: self.parent_id,
+            state: self.state,
+        })
     }
-
-    // Already has seconds (or longer ISO): 2026-07-19T17:16:00
-    if s.len() >= 19 && s.as_bytes().get(10) == Some(&b'T') {
-        return Ok(s[..19].to_string());
-    }
-
-    Err(DbError::new(
-        "created_at must look like 2026-07-19T17:16 or 2026-07-19T17:16:00",
-    ))
 }

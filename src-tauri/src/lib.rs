@@ -3,7 +3,9 @@ mod common;
 mod model;
 mod repo;
 
-use api::{create_task, list_events, list_tasks};
+use api::{
+    create_task, delete_event, delete_task, list_events, list_tasks, update_event, update_task,
+};
 use common::{db_status, init_database};
 use tauri::Manager;
 
@@ -26,7 +28,11 @@ pub fn run() {
             db_status,
             list_tasks,
             create_task,
-            list_events
+            update_task,
+            delete_task,
+            list_events,
+            update_event,
+            delete_event
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
