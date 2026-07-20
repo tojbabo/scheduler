@@ -59,6 +59,7 @@ button {
 }
 
 .shell__main {
+  position: relative;
   margin-left: var(--nav-collapsed);
   height: 100%;
   display: flex;
@@ -70,6 +71,44 @@ button {
   flex: 0 0 var(--drag-h);
   height: var(--drag-h);
   width: 100%;
+}
+
+/* —— Window close (macOS-style traffic light: red only) —— */
+.window-close {
+  position: absolute;
+  top: calc(var(--drag-h) / 2);
+  right: 0.85rem;
+  z-index: calc(var(--z-nav) + 1);
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -0.5px 0.5px rgba(0, 0, 0, 0.12),
+    0 0.5px 1px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  transition:
+    background 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.window-close:hover {
+  background: #e0443e;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -0.5px 0.5px rgba(0, 0, 0, 0.16),
+    0 0.5px 1.5px rgba(0, 0, 0, 0.22);
+}
+
+.window-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .shell__content {
