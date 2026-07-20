@@ -1,6 +1,6 @@
-use crate::db::error::DbError;
-use crate::db::event_model::EventDto;
-use crate::db::task_model::{NewTask, TaskDto};
+use crate::common::DbError;
+use crate::model::event::EventDto;
+use crate::model::task::{NewTask, TaskDto};
 
 /// Backend-agnostic database handle.
 /// Swap SQLite for another engine by implementing this trait.

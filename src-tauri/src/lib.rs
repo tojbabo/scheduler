@@ -1,6 +1,10 @@
-mod db;
+mod api;
+mod common;
+mod model;
+mod repo;
 
-use db::{create_task, db_status, init_database, list_events, list_tasks};
+use api::{create_task, list_events, list_tasks};
+use common::{db_status, init_database};
 use tauri::Manager;
 
 #[tauri::command]

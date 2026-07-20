@@ -1,7 +1,7 @@
 use tauri::State;
 
-use crate::db::bootstrap::AppDatabase;
-use crate::db::event_model::EventDto;
+use crate::common::AppDatabase;
+use crate::model::event::EventDto;
 
 #[tauri::command]
 pub fn list_events(db: State<'_, AppDatabase>) -> Result<Vec<EventDto>, String> {

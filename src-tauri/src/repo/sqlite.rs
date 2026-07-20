@@ -3,10 +3,10 @@ use std::sync::Mutex;
 
 use rusqlite::{params, Connection, OptionalExtension};
 
-use crate::db::error::DbError;
-use crate::db::event_model::EventDto;
-use crate::db::task_model::{NewTask, TaskDto};
-use crate::db::traits::Database;
+use crate::common::DbError;
+use crate::model::event::EventDto;
+use crate::model::task::{NewTask, TaskDto};
+use crate::repo::Database;
 
 /// SQLite-backed [`Database`] implementation.
 pub struct SqliteDatabase {

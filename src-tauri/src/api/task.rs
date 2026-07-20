@@ -1,7 +1,7 @@
 use tauri::State;
 
-use crate::db::bootstrap::AppDatabase;
-use crate::db::task_model::{CreateTaskInput, TaskDto};
+use crate::common::AppDatabase;
+use crate::model::task::{CreateTaskInput, TaskDto};
 
 #[tauri::command]
 pub fn list_tasks(db: State<'_, AppDatabase>) -> Result<Vec<TaskDto>, String> {

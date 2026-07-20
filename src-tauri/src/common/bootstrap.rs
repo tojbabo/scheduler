@@ -3,9 +3,8 @@ use std::sync::Arc;
 
 use tauri::{AppHandle, Manager, State};
 
-use crate::db::error::DbError;
-use crate::db::sqlite::SqliteDatabase;
-use crate::db::traits::Database;
+use crate::common::DbError;
+use crate::repo::{Database, SqliteDatabase};
 
 /// Compiled-in schema. Edit `src-tauri/schema/schema.sql` to change tables.
 const SCHEMA_SQL: &str = include_str!("../../schema/schema.sql");

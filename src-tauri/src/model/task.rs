@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::db::error::DbError;
+use crate::common::DbError;
 
 /// Values allowed by `tasks.state` CHECK constraint.
 pub const TASK_STATE_MIN: i64 = 0;
