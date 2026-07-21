@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { deleteTask, listTasks, type Task } from "../bridge/db";
+import { deleteTask, listTasks, updateTaskState, type Task } from "../bridge/db";
 import { PageLayout } from "../layout/PageLayout";
 
 type LoadState =
@@ -14,15 +14,15 @@ const TASK_STATE_LABELS: Record<number, string> = {
   3: "완료",
 };
 
-function taskStateLabel(state: number): string {
-  return TASK_STATE_LABELS[state] ?? String(state);
-}
+const TASK_STATE_VALUES = [0, 1, 2, 3] as const;
 
 export function Home() {
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
   const [refreshKey, setRefreshKey] = useState(0);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [stateError, setStateError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,6 +70,29 @@ export function Home() {
       });
   }
 
+  function handleStateChange(task: Task, nextState: number) {
+    if (nextState === task.state) return;
+    if (updatingId !== null) return;
+
+    setStateError(null);
+    setUpdatingId(task.id);
+
+    void updateTaskState(task, nextState)
+      .then(() => {
+        loadTasks();
+      })
+      .catch((err: unknown) => {
+        console.error("[TaskStateUpdate] failed", err);
+        const message =
+          err instanceof Error ? err.message : "Task 상태를 변경하지 못했습니다.";
+        setStateError(message);
+        loadTasks();
+      })
+      .finally(() => {
+        setUpdatingId(null);
+      });
+  }
+
   return (
     <PageLayout
       eyebrow="Home"
@@ -93,6 +116,12 @@ export function Home() {
         </p>
       ) : null}
 
+      {stateError ? (
+        <p className="page__status page__status--error" role="alert">
+          {stateError}
+        </p>
+      ) : null}
+
       {load.status === "ready" && load.tasks.length === 0 ? (
         <p className="page__status">등록된 Task가 없습니다.</p>
       ) : null}
@@ -104,7 +133,21 @@ export function Home() {
               <div className="task-list__body">
                 <div className="task-list__header">
                   <h3 className="task-list__title">{task.title}</h3>
-                  <span className="task-list__state">{taskStateLabel(task.state)}</span>
+                  <select
+                    className="task-list__state"
+                    value={task.state}
+                    aria-label={`${task.title} 상태`}
+                    disabled={updatingId !== null}
+                    onChange={(event) =>
+                      handleStateChange(task, Number(event.target.value))
+                    }
+                  >
+                    {TASK_STATE_VALUES.map((value) => (
+                      <option key={value} value={value}>
+                        {TASK_STATE_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 {task.description ? (
                   <p className="task-list__description">{task.description}</p>
@@ -117,7 +160,7 @@ export function Home() {
                 type="button"
                 className="task-list__delete"
                 aria-label="삭제"
-                disabled={deletingId !== null}
+                disabled={deletingId !== null || updatingId !== null}
                 onClick={() => handleDelete(task.id)}
               >
                 ×

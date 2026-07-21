@@ -359,7 +359,7 @@ button {
 
 .task-list__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
 }
@@ -375,10 +375,35 @@ button {
 
 .task-list__state {
   flex: 0 0 auto;
+  max-width: 7.5rem;
+  margin: 0;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--field-bg);
+  color: var(--muted);
+  font: inherit;
   font-size: 0.78rem;
   font-weight: 550;
-  color: var(--muted);
   letter-spacing: 0.01em;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.task-list__state:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent-soft);
+}
+
+.task-list__state:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  color: var(--text);
+}
+
+.task-list__state:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .task-list__description {

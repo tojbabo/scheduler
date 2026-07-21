@@ -98,6 +98,25 @@ export function updateTask(input: UpdateTaskInput): Promise<Task> {
   return invoke<Task>("update_task", { input });
 }
 
+/**
+ * Partial update: change only `state`, reusing the rest of the existing task.
+ * Valid range matches schema CHECK (0–3): 시작 전 / 진행 중 / 중단 / 완료.
+ */
+export function updateTaskState(task: Task, state: number): Promise<Task> {
+  if (!Number.isInteger(state) || state < 0 || state > 3) {
+    return Promise.reject(new Error("state must be an integer between 0 and 3"));
+  }
+
+  return updateTask({
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    createdAt: task.createdAt,
+    parentId: task.parentId,
+    state,
+  });
+}
+
 /** Delete a task by id (child tasks cascade). */
 export function deleteTask(id: number): Promise<void> {
   return invoke<void>("delete_task", { id });

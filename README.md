@@ -130,7 +130,7 @@ cargo --version
 터미널에서 확인 예:
 
 ```bash
-sqlite3 "$APPDATA/com.ojjj.scheduler/scheduler.db"
+sqlite3 "$env:APPDATA/com.ojjj.scheduler/scheduler.db"
 ```
 
 ### 개념: `tasks` vs `events`
