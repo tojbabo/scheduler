@@ -33,7 +33,8 @@ export type Event = {
  * Input for creating a task. `id` is omitted (AUTOINCREMENT).
  * - `description` empty/omitted → NULL
  * - `parentId` omitted/null → root task
- * - `state` omitted/null → 3 (예정)
+ * - `state` omitted/null → Rust `TASK_STATE_DEFAULT` (omit 케이스용)
+ * - UI create 경로(`createTaskFromUiDraft`)는 항상 `state: 0` (시작 전)을 전송
  */
 export type CreateTaskInput = {
   title: string;
@@ -64,13 +65,17 @@ export type UpdateEventInput = {
   updatedAt: string;
 };
 
-/** UI draft shape from TaskCreateDialog (all strings). */
+/**
+ * UI draft shape from TaskCreateDialog (all strings).
+ * `state` is optional and ignored — create always persists state 0.
+ */
 export type TaskUiDraft = {
   title: string;
   description: string;
   createdAt: string;
   parentId: string;
-  state: string;
+  /** @deprecated Ignored; create always uses state 0. */
+  state?: string;
 };
 
 /** Check that the DB backend is up and schema was applied at startup. */
@@ -100,11 +105,10 @@ export function deleteTask(id: number): Promise<void> {
 
 /**
  * Map UI string draft → create payload and persist.
- * Empty parentId/state become null (Rust defaults state to 3).
+ * Empty parentId → null (root). New tasks always get `state: 0` (시작 전).
  */
 export function createTaskFromUiDraft(draft: TaskUiDraft): Promise<Task> {
   const parentRaw = draft.parentId.trim();
-  const stateRaw = draft.state.trim();
 
   let parentId: number | null = null;
   if (parentRaw.length > 0) {
@@ -115,15 +119,6 @@ export function createTaskFromUiDraft(draft: TaskUiDraft): Promise<Task> {
     parentId = n;
   }
 
-  let state: number | null = null;
-  if (stateRaw.length > 0) {
-    const n = Number(stateRaw);
-    if (!Number.isInteger(n)) {
-      return Promise.reject(new Error("state must be an integer"));
-    }
-    state = n;
-  }
-
   const description = draft.description.trim();
 
   return createTask({
@@ -131,7 +126,7 @@ export function createTaskFromUiDraft(draft: TaskUiDraft): Promise<Task> {
     description: description.length > 0 ? description : null,
     createdAt: draft.createdAt.trim(),
     parentId,
-    state,
+    state: 0,
   });
 }
 

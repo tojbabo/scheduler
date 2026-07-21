@@ -7,6 +7,17 @@ type LoadState =
   | { status: "error"; message: string }
   | { status: "ready"; tasks: Task[] };
 
+const TASK_STATE_LABELS: Record<number, string> = {
+  0: "시작 전",
+  1: "진행 중",
+  2: "중단",
+  3: "완료",
+};
+
+function taskStateLabel(state: number): string {
+  return TASK_STATE_LABELS[state] ?? String(state);
+}
+
 export function Home() {
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
   const [refreshKey, setRefreshKey] = useState(0);
@@ -90,32 +101,18 @@ export function Home() {
         <ul className="task-list">
           {load.tasks.map((task) => (
             <li key={task.id} className="task-list__item">
-              <dl className="task-fields">
-                <div className="task-fields__row">
-                  <dt>id</dt>
-                  <dd>{task.id}</dd>
+              <div className="task-list__body">
+                <div className="task-list__header">
+                  <h3 className="task-list__title">{task.title}</h3>
+                  <span className="task-list__state">{taskStateLabel(task.state)}</span>
                 </div>
-                <div className="task-fields__row">
-                  <dt>title</dt>
-                  <dd>{task.title}</dd>
-                </div>
-                <div className="task-fields__row">
-                  <dt>description</dt>
-                  <dd>{task.description ?? "null"}</dd>
-                </div>
-                <div className="task-fields__row">
-                  <dt>createdAt</dt>
-                  <dd>{task.createdAt}</dd>
-                </div>
-                <div className="task-fields__row">
-                  <dt>parentId</dt>
-                  <dd>{task.parentId ?? "null"}</dd>
-                </div>
-                <div className="task-fields__row">
-                  <dt>state</dt>
-                  <dd>{task.state}</dd>
-                </div>
-              </dl>
+                {task.description ? (
+                  <p className="task-list__description">{task.description}</p>
+                ) : null}
+                <time className="task-list__created" dateTime={task.createdAt}>
+                  {task.createdAt}
+                </time>
+              </div>
               <button
                 type="button"
                 className="task-list__delete"

@@ -5,7 +5,6 @@ export type TaskCreateDraft = {
   description: string;
   createdAt: string;
   parentId: string;
-  state: string;
 };
 
 type TaskCreateDialogProps = {
@@ -31,7 +30,6 @@ export function TaskCreateDialog({
   const [description, setDescription] = useState("");
   const [createdAt, setCreatedAt] = useState(nowLocalInputValue);
   const [parentId, setParentId] = useState("");
-  const [state, setState] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -39,7 +37,6 @@ export function TaskCreateDialog({
     setDescription("");
     setCreatedAt(nowLocalInputValue());
     setParentId("");
-    setState("");
   }, [open]);
 
   useEffect(() => {
@@ -60,7 +57,6 @@ export function TaskCreateDialog({
       description: description.trim(),
       createdAt,
       parentId,
-      state,
     };
     onSubmit?.(draft);
     onClose();
@@ -112,17 +108,6 @@ export function TaskCreateDialog({
               className="field__control"
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
-            >
-              <option value="">선택 안 함</option>
-            </select>
-          </label>
-
-          <label className="field">
-            <span className="field__label">상태</span>
-            <select
-              className="field__control"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
             >
               <option value="">선택 안 함</option>
             </select>

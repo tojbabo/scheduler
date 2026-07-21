@@ -7,11 +7,10 @@
 -- tasks  = open-ended work items (할 일), tree via parent_id
 --
 -- task.state (INTEGER):
---   0 = 중단
---   1 = 완료
---   2 = 실행 중
---   3 = 예정
---   4 = (예비)
+--   0 = 시작 전
+--   1 = 진행 중
+--   2 = 중단
+--   3 = 완료
 
 PRAGMA foreign_keys = ON;
 
@@ -52,7 +51,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     parent_id INTEGER,
     state INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (parent_id) REFERENCES tasks (id) ON DELETE CASCADE,
-    CHECK (state IN (0, 1, 2, 3, 4))
+    CHECK (state IN (0, 1, 2, 3))
 );
 
 CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks (parent_id);

@@ -24,10 +24,22 @@ export function PageLayout({
 }: PageLayoutProps) {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const today = new Date();
+  const todayLabel = today.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  });
+  const todayIso = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
 
   function handleTaskSubmit(draft: TaskCreateDraft) {
     const fields = (
-      ["title", "description", "createdAt", "parentId", "state"] as const
+      ["title", "description", "createdAt", "parentId"] as const
     ).map((key) => {
       const value = draft[key];
       const filled = value.trim().length > 0;
@@ -71,6 +83,9 @@ export function PageLayout({
         </div>
 
         <div className="page-head__actions">
+          <time className="page-head__date" dateTime={todayIso}>
+            {todayLabel}
+          </time>
           <button
             type="button"
             className="btn btn--primary"
