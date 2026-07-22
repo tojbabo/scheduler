@@ -68,6 +68,7 @@ export function Calendar() {
       title="캘린더"
       description="달력 형태로 일정을 보는 화면입니다."
       createLabel="일정 추가"
+      createKind="event"
     >
       <div className="calendar">
         <div className="calendar__toolbar">

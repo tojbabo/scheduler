@@ -75,19 +75,28 @@ button {
   width: 100%;
 }
 
-/* —— Window close (macOS-style traffic light: red only) —— */
-.window-close {
+/* —— Window controls (macOS-style: green maximize + red close) —— */
+.window-controls {
   position: absolute;
   top: calc(var(--drag-h) / 2);
   right: 0.85rem;
   z-index: calc(var(--z-nav) + 1);
   transform: translateY(-50%);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.window-max,
+.window-close {
   width: 12px;
   height: 12px;
   padding: 0;
   border: 0.5px solid rgba(0, 0, 0, 0.12);
   border-radius: 50%;
-  background: #ff5f57;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
     inset 0 -0.5px 0.5px rgba(0, 0, 0, 0.12),
@@ -100,6 +109,34 @@ button {
     box-shadow 0.12s ease;
 }
 
+.window-max {
+  background: #28c840;
+}
+
+.window-max:hover {
+  background: #24b33a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -0.5px 0.5px rgba(0, 0, 0, 0.16),
+    0 0.5px 1.5px rgba(0, 0, 0, 0.22);
+}
+
+.window-max--maximized {
+  background: #b5b5b5;
+}
+
+.window-max--maximized:hover {
+  background: #a3a3a3;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -0.5px 0.5px rgba(0, 0, 0, 0.16),
+    0 0.5px 1.5px rgba(0, 0, 0, 0.22);
+}
+
+.window-close {
+  background: #ff5f57;
+}
+
 .window-close:hover {
   background: #e0443e;
   box-shadow:
@@ -108,6 +145,7 @@ button {
     0 0.5px 1.5px rgba(0, 0, 0, 0.22);
 }
 
+.window-max:focus-visible,
 .window-close:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

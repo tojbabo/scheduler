@@ -1,6 +1,10 @@
 import { useState, type ReactNode } from "react";
 import { createTaskFromUiDraft } from "../bridge/db";
 import {
+  EventCreateDialog,
+  type EventCreateDraft,
+} from "../components/EventCreateDialog";
+import {
   TaskCreateDialog,
   type TaskCreateDraft,
 } from "../components/TaskCreateDialog";
@@ -12,8 +16,12 @@ type PageLayoutProps = {
   children?: ReactNode;
   /** Create button label. When omitted, the button and dialog are hidden. */
   createLabel?: string;
+  /** Which create dialog to open. Defaults to "plan". */
+  createKind?: "plan" | "event";
   /** Called after a task is successfully created (e.g. refresh home list). */
   onTaskCreated?: () => void;
+  /** Called with the event draft after submit (no persistence yet). */
+  onEventCreated?: (draft: EventCreateDraft) => void;
 };
 
 /** Common page chrome: head (eyebrow / title / copy) + page-specific body. */
@@ -23,9 +31,11 @@ export function PageLayout({
   description,
   children,
   createLabel,
+  createKind = "plan",
   onTaskCreated,
+  onEventCreated,
 }: PageLayoutProps) {
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const today = new Date();
   const todayLabel = today.toLocaleDateString("ko-KR", {
@@ -76,6 +86,36 @@ export function PageLayout({
       });
   }
 
+  function handleEventSubmit(draft: EventCreateDraft) {
+    const fields = (
+      [
+        "createdAt",
+        "updatedAt",
+        "startsAt",
+        "endsAt",
+        "title",
+        "description",
+        "categoryId",
+      ] as const
+    ).map((key) => {
+      const value = draft[key];
+      const filled = value.trim().length > 0;
+      return { field: key, value, filled };
+    });
+
+    console.group("[EventCreate] submit draft");
+    console.table(fields);
+    for (const { field, value, filled } of fields) {
+      console.log(
+        `  ${field}: filled=${filled}`,
+        filled ? value : "(empty)",
+      );
+    }
+    console.groupEnd();
+
+    onEventCreated?.(draft);
+  }
+
   return (
     <section className="page">
       <header className="page-head" data-tauri-drag-region>
@@ -95,7 +135,7 @@ export function PageLayout({
             <button
               type="button"
               className="btn btn--primary"
-              onClick={() => setTaskDialogOpen(true)}
+              onClick={() => setCreateDialogOpen(true)}
             >
               {createLabel}
             </button>
@@ -111,12 +151,21 @@ export function PageLayout({
 
       {children != null ? <div className="page__body">{children}</div> : null}
 
-      {showCreate ? (
+      {showCreate && createKind === "plan" ? (
         <TaskCreateDialog
-          open={taskDialogOpen}
+          open={createDialogOpen}
           title={createLabel}
-          onClose={() => setTaskDialogOpen(false)}
+          onClose={() => setCreateDialogOpen(false)}
           onSubmit={handleTaskSubmit}
+        />
+      ) : null}
+
+      {showCreate && createKind === "event" ? (
+        <EventCreateDialog
+          open={createDialogOpen}
+          title={createLabel}
+          onClose={() => setCreateDialogOpen(false)}
+          onSubmit={handleEventSubmit}
         />
       ) : null}
     </section>

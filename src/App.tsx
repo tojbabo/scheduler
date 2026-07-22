@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SideNav } from "./layout/SideNav";
-import { WindowCloseButton } from "./layout/WindowCloseButton";
+import { WindowControls } from "./layout/WindowControls";
 import { Home } from "./pages/Home";
 import { Schedule } from "./pages/Schedule";
 import { Calendar } from "./pages/Calendar";
@@ -16,7 +16,7 @@ function App() {
 
       <div className="shell__main">
         <div className="shell__drag" data-tauri-drag-region aria-hidden="true" />
-        <WindowCloseButton />
+        <WindowControls />
         <main className="shell__content">
           {activeMenu === "home" && <Home />}
           {activeMenu === "plan" && <Schedule />}
