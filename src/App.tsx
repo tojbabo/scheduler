@@ -19,7 +19,7 @@ function App() {
         <WindowCloseButton />
         <main className="shell__content">
           {activeMenu === "home" && <Home />}
-          {activeMenu === "schedule" && <Schedule />}
+          {activeMenu === "task" && <Schedule />}
           {activeMenu === "calendar" && <Calendar />}
           {activeMenu === "settings" && <Settings />}
         </main>
