@@ -10,6 +10,8 @@ type PageLayoutProps = {
   title: string;
   description?: string;
   children?: ReactNode;
+  /** Create button label. When omitted, the button and dialog are hidden. */
+  createLabel?: string;
   /** Called after a task is successfully created (e.g. refresh home list). */
   onTaskCreated?: () => void;
 };
@@ -20,6 +22,7 @@ export function PageLayout({
   title,
   description,
   children,
+  createLabel,
   onTaskCreated,
 }: PageLayoutProps) {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
@@ -36,6 +39,8 @@ export function PageLayout({
     String(today.getMonth() + 1).padStart(2, "0"),
     String(today.getDate()).padStart(2, "0"),
   ].join("-");
+
+  const showCreate = createLabel != null && createLabel.length > 0;
 
   function handleTaskSubmit(draft: TaskCreateDraft) {
     const fields = (
@@ -65,7 +70,7 @@ export function PageLayout({
       })
       .catch((err: unknown) => {
         const message =
-          err instanceof Error ? err.message : "Task를 추가하지 못했습니다.";
+          err instanceof Error ? err.message : "계획을 추가하지 못했습니다.";
         console.error("[TaskCreate] failed", err);
         setCreateError(message);
       });
@@ -86,13 +91,15 @@ export function PageLayout({
           <time className="page-head__date" dateTime={todayIso}>
             {todayLabel}
           </time>
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={() => setTaskDialogOpen(true)}
-          >
-            Task 추가
-          </button>
+          {showCreate ? (
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => setTaskDialogOpen(true)}
+            >
+              {createLabel}
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -104,11 +111,14 @@ export function PageLayout({
 
       {children != null ? <div className="page__body">{children}</div> : null}
 
-      <TaskCreateDialog
-        open={taskDialogOpen}
-        onClose={() => setTaskDialogOpen(false)}
-        onSubmit={handleTaskSubmit}
-      />
+      {showCreate ? (
+        <TaskCreateDialog
+          open={taskDialogOpen}
+          title={createLabel}
+          onClose={() => setTaskDialogOpen(false)}
+          onSubmit={handleTaskSubmit}
+        />
+      ) : null}
     </section>
   );
 }

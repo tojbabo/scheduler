@@ -10,6 +10,8 @@ export type TaskCreateDraft = {
 type TaskCreateDialogProps = {
   open: boolean;
   onClose: () => void;
+  /** Dialog heading; defaults to "계획 추가". */
+  title?: string;
   /** UI-only for now; persistence belongs to agent-data. */
   onSubmit?: (draft: TaskCreateDraft) => void;
 };
@@ -23,6 +25,7 @@ function nowLocalInputValue(): string {
 export function TaskCreateDialog({
   open,
   onClose,
+  title: dialogTitle = "계획 추가",
   onSubmit,
 }: TaskCreateDialogProps) {
   const titleId = useId();
@@ -78,7 +81,7 @@ export function TaskCreateDialog({
       >
         <header className="dialog__header">
           <h3 id={titleId} className="dialog__title">
-            Task 추가
+            {dialogTitle}
           </h3>
           <button
             type="button"
@@ -103,7 +106,7 @@ export function TaskCreateDialog({
           </label>
 
           <label className="field">
-            <span className="field__label">부모 Task</span>
+            <span className="field__label">부모 계획</span>
             <select
               className="field__control"
               value={parentId}
@@ -120,7 +123,7 @@ export function TaskCreateDialog({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="할 일 제목"
+              placeholder="계획 제목"
               required
               autoFocus
             />

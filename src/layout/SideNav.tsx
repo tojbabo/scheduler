@@ -2,7 +2,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 
 const MENU_ITEMS = [
   { id: "home", label: "홈", icon: HomeIcon },
-  { id: "task", label: "할 일", icon: ScheduleIcon },
+  { id: "plan", label: "계획", icon: ScheduleIcon },
   { id: "calendar", label: "캘린더", icon: CalendarIcon },
   { id: "settings", label: "설정", icon: SettingsIcon },
 ] as const;

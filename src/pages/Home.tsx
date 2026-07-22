@@ -35,7 +35,7 @@ export function Home() {
       .catch((err: unknown) => {
         if (!cancelled) {
           const message =
-            err instanceof Error ? err.message : "Task 목록을 불러오지 못했습니다.";
+            err instanceof Error ? err.message : "계획 목록을 불러오지 못했습니다.";
           setLoad({ status: "error", message });
         }
       });
@@ -62,7 +62,7 @@ export function Home() {
       .catch((err: unknown) => {
         console.error("[TaskDelete] failed", err);
         const message =
-          err instanceof Error ? err.message : "Task를 삭제하지 못했습니다.";
+          err instanceof Error ? err.message : "계획을 삭제하지 못했습니다.";
         setDeleteError(message);
       })
       .finally(() => {
@@ -84,7 +84,7 @@ export function Home() {
       .catch((err: unknown) => {
         console.error("[TaskStateUpdate] failed", err);
         const message =
-          err instanceof Error ? err.message : "Task 상태를 변경하지 못했습니다.";
+          err instanceof Error ? err.message : "계획 상태를 변경하지 못했습니다.";
         setStateError(message);
         loadTasks();
       })
@@ -98,7 +98,6 @@ export function Home() {
       eyebrow="Home"
       title="오늘의 일정"
       description="좌측 메뉴에 마우스를 올리면 펼쳐지고, 벗어나면 다시 접힙니다."
-      onTaskCreated={loadTasks}
     >
       {load.status === "loading" ? (
         <p className="page__status">불러오는 중…</p>
@@ -123,7 +122,7 @@ export function Home() {
       ) : null}
 
       {load.status === "ready" && load.tasks.length === 0 ? (
-        <p className="page__status">등록된 Task가 없습니다.</p>
+        <p className="page__status">등록된 계획이 없습니다.</p>
       ) : null}
 
       {load.status === "ready" && load.tasks.length > 0 ? (

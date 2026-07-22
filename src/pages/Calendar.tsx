@@ -67,6 +67,7 @@ export function Calendar() {
       eyebrow="Calendar"
       title="캘린더"
       description="달력 형태로 일정을 보는 화면입니다."
+      createLabel="일정 추가"
     >
       <div className="calendar">
         <div className="calendar__toolbar">
@@ -96,11 +97,25 @@ export function Calendar() {
           role="grid"
           aria-label={`${monthTitle(year, month)} 달력`}
         >
-          {WEEKDAYS.map((label) => (
-            <div key={label} className="calendar__weekday" role="columnheader">
-              {label}
-            </div>
-          ))}
+          {WEEKDAYS.map((label, index) => {
+            const weekendClass =
+              index === 0
+                ? "calendar__weekday--sun"
+                : index === 6
+                  ? "calendar__weekday--sat"
+                  : "";
+            return (
+              <div
+                key={label}
+                className={["calendar__weekday", weekendClass]
+                  .filter(Boolean)
+                  .join(" ")}
+                role="columnheader"
+              >
+                {label}
+              </div>
+            );
+          })}
 
           {cells.map((cell) => {
             const key = [
@@ -109,10 +124,13 @@ export function Calendar() {
               cell.date.getDate(),
             ].join("-");
             const isToday = isSameDay(cell.date, today);
+            const weekday = cell.date.getDay();
+            const isWeekend = weekday === 0 || weekday === 6;
             const cellClass = [
               "calendar__cell",
               cell.inMonth ? "" : "calendar__cell--muted",
               isToday ? "calendar__cell--today" : "",
+              isWeekend ? "calendar__cell--weekend" : "",
             ]
               .filter(Boolean)
               .join(" ");
