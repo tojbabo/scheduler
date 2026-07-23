@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { createTaskFromUiDraft } from "../bridge/db";
+import { createEventFromUiDraft, createTaskFromUiDraft } from "../bridge/db";
 import {
   EventCreateDialog,
   type EventCreateDraft,
@@ -20,8 +20,8 @@ type PageLayoutProps = {
   createKind?: "plan" | "event";
   /** Called after a task is successfully created (e.g. refresh home list). */
   onTaskCreated?: () => void;
-  /** Called with the event draft after submit (no persistence yet). */
-  onEventCreated?: (draft: EventCreateDraft) => void;
+  /** Called after an event is successfully created (e.g. refresh calendar). */
+  onEventCreated?: () => void;
 };
 
 /** Common page chrome: head (eyebrow / title / copy) + page-specific body. */
@@ -105,7 +105,19 @@ export function PageLayout({
     }
     console.groupEnd();
 
-    onEventCreated?.(draft);
+    setCreateError(null);
+
+    void createEventFromUiDraft(draft)
+      .then((event) => {
+        console.log("[EventCreate] created", event);
+        onEventCreated?.();
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : "일정을 추가하지 못했습니다.";
+        console.error("[EventCreate] failed", err);
+        setCreateError(message);
+      });
   }
 
   return (
