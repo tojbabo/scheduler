@@ -66,6 +66,27 @@ export type UpdateEventInput = {
 };
 
 /**
+ * Input for creating an event.
+ * `id` / `createdAt` / `updatedAt` are set on the server.
+ */
+export type CreateEventInput = {
+  title: string;
+  description?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  categoryId?: number | null;
+};
+
+/** UI draft shape from EventCreateDialog (all strings). */
+export type EventUiDraft = {
+  startsAt: string;
+  endsAt: string;
+  title: string;
+  description: string;
+  categoryId: string;
+};
+
+/**
  * UI draft shape from TaskCreateDialog (all strings).
  * `state` is optional and ignored — create always persists state 0.
  */
@@ -163,6 +184,39 @@ export function createTaskFromUiDraft(draft: TaskUiDraft): Promise<Task> {
 /** All events, ordered by starts_at (nulls last), then id. */
 export function listEvents(): Promise<Event[]> {
   return invoke<Event[]>("list_events");
+}
+
+/** Insert an event; server sets id, createdAt, updatedAt. */
+export function createEvent(input: CreateEventInput): Promise<Event> {
+  return invoke<Event>("create_event", { input });
+}
+
+/**
+ * Map UI string draft → create payload and persist.
+ * Empty starts/ends/category → null; createdAt/updatedAt set by Rust.
+ */
+export function createEventFromUiDraft(draft: EventUiDraft): Promise<Event> {
+  const startsAt = draft.startsAt.trim();
+  const endsAt = draft.endsAt.trim();
+  const description = draft.description.trim();
+  const categoryRaw = draft.categoryId.trim();
+
+  let categoryId: number | null = null;
+  if (categoryRaw.length > 0) {
+    const n = Number(categoryRaw);
+    if (!Number.isInteger(n) || n < 0) {
+      return Promise.reject(new Error("categoryId must be a non-negative integer"));
+    }
+    categoryId = n;
+  }
+
+  return createEvent({
+    title: draft.title.trim(),
+    description: description.length > 0 ? description : null,
+    startsAt: startsAt.length > 0 ? startsAt : null,
+    endsAt: endsAt.length > 0 ? endsAt : null,
+    categoryId,
+  });
 }
 
 /** Replace an event by id; returns the updated row. */

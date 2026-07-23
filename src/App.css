@@ -683,6 +683,10 @@ button {
   align-items: start;
 }
 
+.field-row--7-3 {
+  grid-template-columns: 7fr 3fr;
+}
+
 .field {
   display: flex;
   flex-direction: column;

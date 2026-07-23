@@ -2,7 +2,9 @@ import { useEffect, useId, useState, type FormEvent } from "react";
 import { useCategories } from "../state/CategoriesContext";
 
 export type EventCreateDraft = {
+  /** ISO-like local datetime; date-only UI is expanded to `YYYY-MM-DDT00:00`. */
   startsAt: string;
+  /** ISO-like local datetime; date-only UI is expanded to `YYYY-MM-DDT00:00`. */
   endsAt: string;
   title: string;
   description: string;
@@ -17,6 +19,13 @@ type EventCreateDialogProps = {
   /** UI-only for now; persistence belongs to agent-data. */
   onSubmit?: (draft: EventCreateDraft) => void;
 };
+
+/** Date input (`YYYY-MM-DD`) → API local midnight (`YYYY-MM-DDT00:00`). */
+function dateToMidnightLocal(date: string): string {
+  const trimmed = date.trim();
+  if (!trimmed) return "";
+  return `${trimmed}T00:00`;
+}
 
 export function EventCreateDialog({
   open,
@@ -55,8 +64,8 @@ export function EventCreateDialog({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const draft: EventCreateDraft = {
-      startsAt,
-      endsAt,
+      startsAt: dateToMidnightLocal(startsAt),
+      endsAt: dateToMidnightLocal(endsAt),
       title: title.trim(),
       description: description.trim(),
       categoryId,
@@ -99,7 +108,7 @@ export function EventCreateDialog({
               <span className="field__label">시작</span>
               <input
                 className="field__control"
-                type="datetime-local"
+                type="date"
                 value={startsAt}
                 onChange={(e) => setStartsAt(e.target.value)}
               />
@@ -109,25 +118,43 @@ export function EventCreateDialog({
               <span className="field__label">종료</span>
               <input
                 className="field__control"
-                type="datetime-local"
+                type="date"
                 value={endsAt}
                 onChange={(e) => setEndsAt(e.target.value)}
               />
             </label>
           </div>
 
-          <label className="field">
-            <span className="field__label">제목</span>
-            <input
-              className="field__control"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="일정 제목"
-              required
-              autoFocus
-            />
-          </label>
+          <div className="field-row field-row--7-3">
+            <label className="field">
+              <span className="field__label">제목</span>
+              <input
+                className="field__control"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="일정 제목"
+                required
+                autoFocus
+              />
+            </label>
+
+            <label className="field">
+              <span className="field__label">카테고리</span>
+              <select
+                className="field__control"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                disabled={categoriesLoading}
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
           <label className="field">
             <span className="field__label">설명</span>
@@ -138,22 +165,6 @@ export function EventCreateDialog({
               placeholder="선택 사항"
               rows={4}
             />
-          </label>
-
-          <label className="field">
-            <span className="field__label">카테고리</span>
-            <select
-              className="field__control"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              disabled={categoriesLoading}
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
           </label>
 
           <div className="dialog__actions">
