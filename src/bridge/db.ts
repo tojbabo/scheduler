@@ -78,6 +78,17 @@ export type TaskUiDraft = {
   state?: string;
 };
 
+/** Category option from Rust `Category` enum. */
+export type Category = {
+  id: number;
+  name: string;
+};
+
+/** All app-defined categories (id + Korean label). Call once when opening a select. */
+export function listCategories(): Promise<Category[]> {
+  return invoke<Category[]>("list_categories");
+}
+
 /** Check that the DB backend is up and schema was applied at startup. */
 export function getDbStatus(): Promise<DbStatus> {
   return invoke<DbStatus>("db_status");

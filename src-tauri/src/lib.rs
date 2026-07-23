@@ -4,7 +4,8 @@ mod model;
 mod repo;
 
 use api::{
-    create_task, delete_event, delete_task, list_events, list_tasks, update_event, update_task,
+    create_task, delete_event, delete_task, list_categories, list_events, list_tasks,
+    update_event, update_task,
 };
 use common::{db_status, init_database};
 use tauri::Manager;
@@ -26,6 +27,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             db_status,
+            list_categories,
             list_tasks,
             create_task,
             update_task,
