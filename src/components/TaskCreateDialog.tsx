@@ -110,9 +110,7 @@ export function TaskCreateDialog({
             <select
               className="field__control"
               value={parentId}
-              onChange={(e) => setParentId(e.target.value)}
-            >
-              <option value="">선택 안 함</option>
+              onChange={(e) => setParentId(e.target.value)}>
             </select>
           </label>
 

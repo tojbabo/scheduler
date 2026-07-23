@@ -5,26 +5,29 @@ import { Home } from "./pages/Home";
 import { Schedule } from "./pages/Schedule";
 import { Calendar } from "./pages/Calendar";
 import { Settings } from "./pages/Settings";
+import { CategoriesProvider } from "./state/CategoriesContext";
 import "./App.css";
 
 function App() {
   const [activeMenu, setActiveMenu] = useState("home");
 
   return (
-    <div className="shell">
-      <SideNav activeId={activeMenu} onSelect={setActiveMenu} />
+    <CategoriesProvider>
+      <div className="shell">
+        <SideNav activeId={activeMenu} onSelect={setActiveMenu} />
 
-      <div className="shell__main">
-        <div className="shell__drag" data-tauri-drag-region aria-hidden="true" />
-        <WindowControls />
-        <main className="shell__content">
-          {activeMenu === "home" && <Home />}
-          {activeMenu === "plan" && <Schedule />}
-          {activeMenu === "calendar" && <Calendar />}
-          {activeMenu === "settings" && <Settings />}
-        </main>
+        <div className="shell__main">
+          <div className="shell__drag" data-tauri-drag-region aria-hidden="true" />
+          <WindowControls />
+          <main className="shell__content">
+            {activeMenu === "home" && <Home />}
+            {activeMenu === "plan" && <Schedule />}
+            {activeMenu === "calendar" && <Calendar />}
+            {activeMenu === "settings" && <Settings />}
+          </main>
+        </div>
       </div>
-    </div>
+    </CategoriesProvider>
   );
 }
 

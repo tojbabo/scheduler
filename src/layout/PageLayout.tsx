@@ -88,15 +88,7 @@ export function PageLayout({
 
   function handleEventSubmit(draft: EventCreateDraft) {
     const fields = (
-      [
-        "createdAt",
-        "updatedAt",
-        "startsAt",
-        "endsAt",
-        "title",
-        "description",
-        "categoryId",
-      ] as const
+      ["startsAt", "endsAt", "title", "description", "categoryId"] as const
     ).map((key) => {
       const value = draft[key];
       const filled = value.trim().length > 0;

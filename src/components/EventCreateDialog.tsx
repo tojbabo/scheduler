@@ -1,8 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
+import { useCategories } from "../state/CategoriesContext";
 
 export type EventCreateDraft = {
-  createdAt: string;
-  updatedAt: string;
   startsAt: string;
   endsAt: string;
   title: string;
@@ -19,12 +18,6 @@ type EventCreateDialogProps = {
   onSubmit?: (draft: EventCreateDraft) => void;
 };
 
-function nowLocalInputValue(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 export function EventCreateDialog({
   open,
   onClose,
@@ -32,8 +25,7 @@ export function EventCreateDialog({
   onSubmit,
 }: EventCreateDialogProps) {
   const titleId = useId();
-  const [createdAt, setCreatedAt] = useState(nowLocalInputValue);
-  const [updatedAt, setUpdatedAt] = useState(nowLocalInputValue);
+  const { categories, loading: categoriesLoading } = useCategories();
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [title, setTitle] = useState("");
@@ -42,9 +34,6 @@ export function EventCreateDialog({
 
   useEffect(() => {
     if (!open) return;
-    const now = nowLocalInputValue();
-    setCreatedAt(now);
-    setUpdatedAt(now);
     setStartsAt("");
     setEndsAt("");
     setTitle("");
@@ -66,8 +55,6 @@ export function EventCreateDialog({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const draft: EventCreateDraft = {
-      createdAt,
-      updatedAt,
       startsAt,
       endsAt,
       title: title.trim(),
@@ -107,47 +94,27 @@ export function EventCreateDialog({
         </header>
 
         <form className="dialog__form" onSubmit={handleSubmit}>
-          <label className="field">
-            <span className="field__label">작성</span>
-            <input
-              className="field__control"
-              type="datetime-local"
-              value={createdAt}
-              disabled
-              readOnly
-            />
-          </label>
+          <div className="field-row">
+            <label className="field">
+              <span className="field__label">시작</span>
+              <input
+                className="field__control"
+                type="datetime-local"
+                value={startsAt}
+                onChange={(e) => setStartsAt(e.target.value)}
+              />
+            </label>
 
-          <label className="field">
-            <span className="field__label">수정</span>
-            <input
-              className="field__control"
-              type="datetime-local"
-              value={updatedAt}
-              disabled
-              readOnly
-            />
-          </label>
-
-          <label className="field">
-            <span className="field__label">시작</span>
-            <input
-              className="field__control"
-              type="datetime-local"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
-            />
-          </label>
-
-          <label className="field">
-            <span className="field__label">종료</span>
-            <input
-              className="field__control"
-              type="datetime-local"
-              value={endsAt}
-              onChange={(e) => setEndsAt(e.target.value)}
-            />
-          </label>
+            <label className="field">
+              <span className="field__label">종료</span>
+              <input
+                className="field__control"
+                type="datetime-local"
+                value={endsAt}
+                onChange={(e) => setEndsAt(e.target.value)}
+              />
+            </label>
+          </div>
 
           <label className="field">
             <span className="field__label">제목</span>
@@ -179,8 +146,13 @@ export function EventCreateDialog({
               className="field__control"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
+              disabled={categoriesLoading}
             >
-              <option value="">선택 안 함</option>
+              {categories.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
             </select>
           </label>
 
