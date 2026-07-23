@@ -424,6 +424,53 @@ button {
   }
 }
 
+/* —— Event list (home upcoming) —— */
+.event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.event-list__item {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.event-list__item:last-child {
+  border-bottom: 0;
+}
+
+.event-list__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.event-list__range {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.event-list__description {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.45;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* —— Task list —— */
 .task-list {
   list-style: none;

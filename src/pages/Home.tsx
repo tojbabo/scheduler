@@ -1,3 +1,4 @@
+import { EventList } from "../components/EventList";
 import { PlanList } from "../components/PlanList";
 import { PageLayout } from "../layout/PageLayout";
 
@@ -20,9 +21,7 @@ export function Home() {
           <h3 id="home-upcoming-heading" className="home-panel__title">
             다가올 일정
           </h3>
-          <p className="home-panel__empty">
-            다가올 일정이 여기에 표시됩니다.
-          </p>
+          <EventList />
         </section>
       </div>
     </PageLayout>
