@@ -32,3 +32,7 @@ pub fn normalize_optional_iso_timestamp(
         Some(s) => Ok(Some(normalize_iso_timestamp(s)?)),
     }
 }
+
+/// SQLite expression: local now as `YYYY-MM-DDTHH:MM:SS`.
+pub const SQLITE_NOW_LOCAL_ISO: &str =
+    "strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime')";

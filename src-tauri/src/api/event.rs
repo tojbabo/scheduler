@@ -1,11 +1,22 @@
 use tauri::State;
 
 use crate::common::AppDatabase;
-use crate::model::event::{EventDto, UpdateEventInput};
+use crate::model::event::{CreateEventInput, EventDto, UpdateEventInput};
 
 #[tauri::command]
 pub fn list_events(db: State<'_, AppDatabase>) -> Result<Vec<EventDto>, String> {
     db.inner.list_events().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn create_event(
+    db: State<'_, AppDatabase>,
+    input: CreateEventInput,
+) -> Result<EventDto, String> {
+    let new_event = input.into_new_event().map_err(|e| e.to_string())?;
+    db.inner
+        .create_event(&new_event)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

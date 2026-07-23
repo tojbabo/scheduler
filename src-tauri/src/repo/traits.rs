@@ -1,5 +1,5 @@
 use crate::common::DbError;
-use crate::model::event::{EventDto, EventPatch};
+use crate::model::event::{EventDto, EventPatch, NewEvent};
 use crate::model::task::{NewTask, TaskDto, TaskPatch};
 
 /// Backend-agnostic database handle.
@@ -7,6 +7,9 @@ use crate::model::task::{NewTask, TaskDto, TaskPatch};
 pub trait Database: Send + Sync {
     /// Apply DDL from a schema script (expected to be idempotent, e.g. IF NOT EXISTS).
     fn apply_schema(&self, schema_sql: &str) -> Result<(), DbError>;
+
+    /// Ensure reference rows (e.g. categories) exist for FKs.
+    fn seed_reference_data(&self) -> Result<(), DbError>;
 
     /// Backend identifier for diagnostics (e.g. "sqlite").
     fn backend_name(&self) -> &'static str;
@@ -28,6 +31,9 @@ pub trait Database: Send + Sync {
 
     /// All events, ordered by starts_at (nulls last), then id.
     fn list_events(&self) -> Result<Vec<EventDto>, DbError>;
+
+    /// Insert an event; `id` AUTOINCREMENT, timestamps set to local now.
+    fn create_event(&self, event: &NewEvent) -> Result<EventDto, DbError>;
 
     /// Replace event fields by id (`created_at` unchanged).
     fn update_event(&self, patch: &EventPatch) -> Result<EventDto, DbError>;

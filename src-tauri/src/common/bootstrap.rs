@@ -19,6 +19,7 @@ pub fn init_database(app: &AppHandle) -> Result<AppDatabase, DbError> {
     // Concrete backend today: SQLite. Replace this line to swap engines.
     let db: Arc<dyn Database> = Arc::new(SqliteDatabase::open(&db_path)?);
     db.apply_schema(SCHEMA_SQL)?;
+    db.seed_reference_data()?;
     Ok(AppDatabase { inner: db })
 }
 

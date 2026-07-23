@@ -4,8 +4,8 @@ mod model;
 mod repo;
 
 use api::{
-    create_task, delete_event, delete_task, list_categories, list_events, list_tasks,
-    update_event, update_task,
+    create_event, create_task, delete_event, delete_task, list_categories, list_events,
+    list_tasks, update_event, update_task,
 };
 use common::{db_status, init_database};
 use tauri::Manager;
@@ -33,6 +33,7 @@ pub fn run() {
             update_task,
             delete_task,
             list_events,
+            create_event,
             update_event,
             delete_event
         ])

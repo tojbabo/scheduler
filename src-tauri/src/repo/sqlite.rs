@@ -3,8 +3,9 @@ use std::sync::Mutex;
 
 use rusqlite::{params, Connection, OptionalExtension};
 
-use crate::common::DbError;
-use crate::model::event::{EventDto, EventPatch};
+use crate::common::time::SQLITE_NOW_LOCAL_ISO;
+use crate::common::{Category, DbError};
+use crate::model::event::{EventDto, EventPatch, NewEvent};
 use crate::model::task::{NewTask, TaskDto, TaskPatch};
 use crate::repo::Database;
 
@@ -60,6 +61,21 @@ impl Database for SqliteDatabase {
     fn apply_schema(&self, schema_sql: &str) -> Result<(), DbError> {
         let conn = self.conn.lock()?;
         conn.execute_batch(schema_sql)?;
+        Ok(())
+    }
+
+    fn seed_reference_data(&self) -> Result<(), DbError> {
+        let conn = self.conn.lock()?;
+        let sql = format!(
+            "INSERT INTO categories (id, name, created_at, updated_at)
+             VALUES (?1, ?2, {SQLITE_NOW_LOCAL_ISO}, {SQLITE_NOW_LOCAL_ISO})
+             ON CONFLICT(id) DO UPDATE SET
+               name = excluded.name,
+               updated_at = excluded.updated_at"
+        );
+        for category in Category::ALL {
+            conn.execute(&sql, params![category.id(), category.to_string()])?;
+        }
         Ok(())
     }
 
@@ -177,6 +193,36 @@ impl Database for SqliteDatabase {
         Ok(out)
     }
 
+    fn create_event(&self, event: &NewEvent) -> Result<EventDto, DbError> {
+        let conn = self.conn.lock()?;
+
+        let sql = format!(
+            "INSERT INTO events
+               (created_at, updated_at, starts_at, ends_at, title, description, category_id)
+             VALUES
+               ({SQLITE_NOW_LOCAL_ISO}, {SQLITE_NOW_LOCAL_ISO}, ?1, ?2, ?3, ?4, ?5)"
+        );
+        conn.execute(
+            &sql,
+            params![
+                event.starts_at,
+                event.ends_at,
+                event.title,
+                event.description,
+                event.category_id,
+            ],
+        )?;
+
+        let id = conn.last_insert_rowid();
+        conn.query_row(
+            "SELECT id, created_at, updated_at, starts_at, ends_at, title, description, category_id
+             FROM events WHERE id = ?1",
+            params![id],
+            map_event_row,
+        )
+        .map_err(DbError::from)
+    }
+
     fn update_event(&self, patch: &EventPatch) -> Result<EventDto, DbError> {
         let conn = self.conn.lock()?;
 
@@ -189,21 +235,6 @@ impl Database for SqliteDatabase {
             .optional()?;
         if exists.is_none() {
             return Err(DbError::new(format!("event {} not found", patch.id)));
-        }
-
-        if let Some(category_id) = patch.category_id {
-            let cat: Option<i64> = conn
-                .query_row(
-                    "SELECT id FROM categories WHERE id = ?1",
-                    params![category_id],
-                    |row| row.get(0),
-                )
-                .optional()?;
-            if cat.is_none() {
-                return Err(DbError::new(format!(
-                    "category_id {category_id} does not exist"
-                )));
-            }
         }
 
         let updated = conn.execute(
