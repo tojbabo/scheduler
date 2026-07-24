@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PageLayout } from "../layout/PageLayout";
+import { PageLayout, type EventDateRequest } from "../layout/PageLayout";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
@@ -44,11 +44,21 @@ function monthTitle(year: number, month: number): string {
   return `${year}년 ${month + 1}월`;
 }
 
+function toDateInputValue(date: Date): string {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 export function Calendar() {
   const today = new Date();
   const [cursor, setCursor] = useState(() =>
     startOfMonth(today.getFullYear(), today.getMonth()),
   );
+  const [eventDateRequest, setEventDateRequest] =
+    useState<EventDateRequest | null>(null);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -62,6 +72,13 @@ export function Calendar() {
     setCursor(startOfMonth(year, month + 1));
   }
 
+  function requestEventForDate(date: Date) {
+    setEventDateRequest({
+      date: toDateInputValue(date),
+      nonce: Date.now(),
+    });
+  }
+
   return (
     <PageLayout
       eyebrow="Calendar"
@@ -69,6 +86,8 @@ export function Calendar() {
       description="달력 형태로 일정을 보는 화면입니다."
       createLabel="일정 추가"
       createKind="event"
+      eventDateRequest={eventDateRequest}
+      onEventDateRequestConsumed={() => setEventDateRequest(null)}
     >
       <div className="calendar">
         <div className="calendar__toolbar">
@@ -119,11 +138,7 @@ export function Calendar() {
           })}
 
           {cells.map((cell) => {
-            const key = [
-              cell.date.getFullYear(),
-              cell.date.getMonth() + 1,
-              cell.date.getDate(),
-            ].join("-");
+            const iso = toDateInputValue(cell.date);
             const isToday = isSameDay(cell.date, today);
             const weekday = cell.date.getDay();
             const isWeekend = weekday === 0 || weekday === 6;
@@ -137,11 +152,14 @@ export function Calendar() {
               .join(" ");
 
             return (
-              <div
-                key={key}
+              <button
+                key={iso}
+                type="button"
                 className={cellClass}
                 role="gridcell"
                 aria-current={isToday ? "date" : undefined}
+                aria-label={`${iso} 일정 추가`}
+                onClick={() => requestEventForDate(cell.date)}
               >
                 <span
                   className={
@@ -150,7 +168,7 @@ export function Calendar() {
                 >
                   {cell.date.getDate()}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>

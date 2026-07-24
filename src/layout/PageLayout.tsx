@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createEventFromUiDraft, createTaskFromUiDraft } from "../bridge/db";
 import {
   EventCreateDialog,
@@ -8,6 +8,11 @@ import {
   TaskCreateDialog,
   type TaskCreateDraft,
 } from "../components/TaskCreateDialog";
+
+export type EventDateRequest = {
+  date: string;
+  nonce: number;
+};
 
 type PageLayoutProps = {
   eyebrow: string;
@@ -22,6 +27,13 @@ type PageLayoutProps = {
   onTaskCreated?: () => void;
   /** Called after an event is successfully created (e.g. refresh calendar). */
   onEventCreated?: () => void;
+  /**
+   * When `nonce` changes, open the event dialog with `date` as initial
+   * starts/ends (`YYYY-MM-DD`). Header 「일정 추가」 opens without a date.
+   */
+  eventDateRequest?: EventDateRequest | null;
+  /** Clear the parent request after the dialog consumes / closes it. */
+  onEventDateRequestConsumed?: () => void;
 };
 
 /** Common page chrome: head (eyebrow / title / copy) + page-specific body. */
@@ -34,8 +46,11 @@ export function PageLayout({
   createKind = "plan",
   onTaskCreated,
   onEventCreated,
+  eventDateRequest = null,
+  onEventDateRequestConsumed,
 }: PageLayoutProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [eventInitialDate, setEventInitialDate] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const today = new Date();
   const todayLabel = today.toLocaleDateString("ko-KR", {
@@ -51,6 +66,25 @@ export function PageLayout({
   ].join("-");
 
   const showCreate = createLabel != null && createLabel.length > 0;
+  const requestNonce = eventDateRequest?.nonce;
+  const requestDate = eventDateRequest?.date;
+
+  useEffect(() => {
+    if (requestNonce == null || requestDate == null) return;
+    setEventInitialDate(requestDate);
+    setCreateDialogOpen(true);
+  }, [requestNonce, requestDate]);
+
+  function openCreateDialog() {
+    setEventInitialDate(null);
+    setCreateDialogOpen(true);
+  }
+
+  function closeCreateDialog() {
+    setCreateDialogOpen(false);
+    setEventInitialDate(null);
+    onEventDateRequestConsumed?.();
+  }
 
   function handleTaskSubmit(draft: TaskCreateDraft) {
     const fields = (
@@ -139,7 +173,7 @@ export function PageLayout({
             <button
               type="button"
               className="btn btn--primary"
-              onClick={() => setCreateDialogOpen(true)}
+              onClick={openCreateDialog}
             >
               {createLabel}
             </button>
@@ -159,7 +193,7 @@ export function PageLayout({
         <TaskCreateDialog
           open={createDialogOpen}
           title={createLabel}
-          onClose={() => setCreateDialogOpen(false)}
+          onClose={closeCreateDialog}
           onSubmit={handleTaskSubmit}
         />
       ) : null}
@@ -168,7 +202,9 @@ export function PageLayout({
         <EventCreateDialog
           open={createDialogOpen}
           title={createLabel}
-          onClose={() => setCreateDialogOpen(false)}
+          initialStartsAt={eventInitialDate ?? undefined}
+          initialEndsAt={eventInitialDate ?? undefined}
+          onClose={closeCreateDialog}
           onSubmit={handleEventSubmit}
         />
       ) : null}

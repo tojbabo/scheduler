@@ -841,15 +841,39 @@ button {
 }
 
 .calendar__cell {
+  display: block;
+  width: 100%;
   min-height: 0;
+  margin: 0;
   padding: 0.4rem 0.45rem;
+  border: none;
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  border-radius: 0;
   background: var(--field-bg);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  transition: background-color 0.12s ease;
+}
+
+.calendar__cell:hover {
+  background: var(--hover-tint);
+}
+
+.calendar__cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  z-index: 1;
 }
 
 .calendar__cell--muted {
   background: var(--bg);
+}
+
+.calendar__cell--muted:hover {
+  background: var(--hover-tint);
 }
 
 .calendar__day {

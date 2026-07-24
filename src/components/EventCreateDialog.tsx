@@ -16,6 +16,10 @@ type EventCreateDialogProps = {
   onClose: () => void;
   /** Dialog heading; defaults to "일정 추가". */
   title?: string;
+  /** Prefill start date (`YYYY-MM-DD`) when the dialog opens. */
+  initialStartsAt?: string;
+  /** Prefill end date (`YYYY-MM-DD`) when the dialog opens. */
+  initialEndsAt?: string;
   /** UI-only for now; persistence belongs to agent-data. */
   onSubmit?: (draft: EventCreateDraft) => void;
 };
@@ -31,6 +35,8 @@ export function EventCreateDialog({
   open,
   onClose,
   title: dialogTitle = "일정 추가",
+  initialStartsAt,
+  initialEndsAt,
   onSubmit,
 }: EventCreateDialogProps) {
   const titleId = useId();
@@ -43,12 +49,12 @@ export function EventCreateDialog({
 
   useEffect(() => {
     if (!open) return;
-    setStartsAt("");
-    setEndsAt("");
+    setStartsAt(initialStartsAt ?? "");
+    setEndsAt(initialEndsAt ?? "");
     setTitle("");
     setDescription("");
     setCategoryId("");
-  }, [open]);
+  }, [open, initialStartsAt, initialEndsAt]);
 
   useEffect(() => {
     if (!open) return;
