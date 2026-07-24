@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { listEvents, type Event } from "../bridge/db";
 import { PageLayout, type EventDateRequest } from "../layout/PageLayout";
 
@@ -7,6 +12,11 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 type CalendarCell = {
   date: Date;
   inMonth: boolean;
+};
+
+type DragSelection = {
+  anchor: string;
+  focus: string;
 };
 
 function startOfMonth(year: number, month: number): Date {
@@ -72,6 +82,10 @@ function eventsForDay(events: Event[], dayKey: string): Event[] {
   return events.filter((event) => eventOccursOnDay(event, dayKey));
 }
 
+function orderedRange(a: string, b: string): [string, string] {
+  return a <= b ? [a, b] : [b, a];
+}
+
 export function Calendar() {
   const today = new Date();
   const [cursor, setCursor] = useState(() =>
@@ -81,10 +95,19 @@ export function Calendar() {
     useState<EventDateRequest | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [eventsVersion, setEventsVersion] = useState(0);
+  const [dragSelection, setDragSelection] = useState<DragSelection | null>(
+    null,
+  );
+  const dragSelectionRef = useRef(dragSelection);
+  dragSelectionRef.current = dragSelection;
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
   const cells = buildMonthCells(year, month);
+  const isDragging = dragSelection != null;
+  const [selectStart, selectEnd] = dragSelection
+    ? orderedRange(dragSelection.anchor, dragSelection.focus)
+    : [null, null];
 
   useEffect(() => {
     let cancelled = false;
@@ -105,6 +128,29 @@ export function Calendar() {
     };
   }, [eventsVersion]);
 
+  useEffect(() => {
+    if (!isDragging) return;
+
+    function finishDrag() {
+      const current = dragSelectionRef.current;
+      if (current == null) return;
+      const [startDate, endDate] = orderedRange(current.anchor, current.focus);
+      setEventDateRequest({
+        startDate,
+        endDate,
+        nonce: Date.now(),
+      });
+      setDragSelection(null);
+    }
+
+    window.addEventListener("pointerup", finishDrag);
+    window.addEventListener("pointercancel", finishDrag);
+    return () => {
+      window.removeEventListener("pointerup", finishDrag);
+      window.removeEventListener("pointercancel", finishDrag);
+    };
+  }, [isDragging]);
+
   function goPrevMonth() {
     setCursor(startOfMonth(year, month - 1));
   }
@@ -113,11 +159,20 @@ export function Calendar() {
     setCursor(startOfMonth(year, month + 1));
   }
 
-  function requestEventForDate(date: Date) {
-    setEventDateRequest({
-      date: toDateInputValue(date),
-      nonce: Date.now(),
-    });
+  function handleCellPointerDown(
+    event: ReactPointerEvent<HTMLButtonElement>,
+    iso: string,
+  ) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    setDragSelection({ anchor: iso, focus: iso });
+  }
+
+  function handleCellPointerEnter(iso: string) {
+    if (dragSelectionRef.current == null) return;
+    setDragSelection((current) =>
+      current == null ? null : { ...current, focus: iso },
+    );
   }
 
   function refreshEvents() {
@@ -158,7 +213,12 @@ export function Calendar() {
         </div>
 
         <div
-          className="calendar__grid"
+          className={[
+            "calendar__grid",
+            isDragging ? "calendar__grid--selecting" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           role="grid"
           aria-label={`${monthTitle(year, month)} 달력`}
         >
@@ -188,11 +248,17 @@ export function Calendar() {
             const weekday = cell.date.getDay();
             const isWeekend = weekday === 0 || weekday === 6;
             const dayEvents = eventsForDay(events, iso);
+            const isSelecting =
+              selectStart != null &&
+              selectEnd != null &&
+              iso >= selectStart &&
+              iso <= selectEnd;
             const cellClass = [
               "calendar__cell",
               cell.inMonth ? "" : "calendar__cell--muted",
               isToday ? "calendar__cell--today" : "",
               isWeekend ? "calendar__cell--weekend" : "",
+              isSelecting ? "calendar__cell--selecting" : "",
             ]
               .filter(Boolean)
               .join(" ");
@@ -209,7 +275,8 @@ export function Calendar() {
                     ? `${iso} 일정 추가, ${dayEvents.map((e) => e.title).join(", ")}`
                     : `${iso} 일정 추가`
                 }
-                onClick={() => requestEventForDate(cell.date)}
+                onPointerDown={(event) => handleCellPointerDown(event, iso)}
+                onPointerEnter={() => handleCellPointerEnter(iso)}
               >
                 <span
                   className={

@@ -818,6 +818,10 @@ button {
   background: var(--field-bg);
 }
 
+.calendar__grid--selecting {
+  user-select: none;
+}
+
 .calendar__weekday {
   padding: 0.55rem 0.35rem;
   text-align: center;
@@ -873,6 +877,13 @@ button {
 
 .calendar__cell--muted:hover {
   background: var(--hover-tint);
+}
+
+.calendar__cell--selecting,
+.calendar__cell--selecting:hover,
+.calendar__cell--muted.calendar__cell--selecting,
+.calendar__cell--muted.calendar__cell--selecting:hover {
+  background: var(--accent-soft);
 }
 
 .calendar__day {

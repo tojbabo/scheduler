@@ -10,7 +10,10 @@ import {
 } from "../components/TaskCreateDialog";
 
 export type EventDateRequest = {
-  date: string;
+  /** Inclusive range start (`YYYY-MM-DD`). */
+  startDate: string;
+  /** Inclusive range end (`YYYY-MM-DD`). Same as startDate for a single day. */
+  endDate: string;
   nonce: number;
 };
 
@@ -27,8 +30,9 @@ type PageLayoutProps = {
   /** Called after an event is successfully created (e.g. refresh calendar). */
   onEventCreated?: () => void;
   /**
-   * When `nonce` changes, open the event dialog with `date` as initial
-   * starts/ends (`YYYY-MM-DD`). Header 「일정 추가」 opens without a date.
+   * When `nonce` changes, open the event dialog with `startDate` /
+   * `endDate` as initial starts/ends (`YYYY-MM-DD`). Header 「일정 추가」
+   * opens without a date.
    */
   eventDateRequest?: EventDateRequest | null;
   /** Clear the parent request after the dialog consumes / closes it. */
@@ -48,7 +52,12 @@ export function PageLayout({
   onEventDateRequestConsumed,
 }: PageLayoutProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [eventInitialDate, setEventInitialDate] = useState<string | null>(null);
+  const [eventInitialStartsAt, setEventInitialStartsAt] = useState<
+    string | null
+  >(null);
+  const [eventInitialEndsAt, setEventInitialEndsAt] = useState<string | null>(
+    null,
+  );
   const [createError, setCreateError] = useState<string | null>(null);
   const today = new Date();
   const todayLabel = today.toLocaleDateString("ko-KR", {
@@ -65,22 +74,32 @@ export function PageLayout({
 
   const showCreate = createLabel != null && createLabel.length > 0;
   const requestNonce = eventDateRequest?.nonce;
-  const requestDate = eventDateRequest?.date;
+  const requestStartDate = eventDateRequest?.startDate;
+  const requestEndDate = eventDateRequest?.endDate;
 
   useEffect(() => {
-    if (requestNonce == null || requestDate == null) return;
-    setEventInitialDate(requestDate);
+    if (
+      requestNonce == null ||
+      requestStartDate == null ||
+      requestEndDate == null
+    ) {
+      return;
+    }
+    setEventInitialStartsAt(requestStartDate);
+    setEventInitialEndsAt(requestEndDate);
     setCreateDialogOpen(true);
-  }, [requestNonce, requestDate]);
+  }, [requestNonce, requestStartDate, requestEndDate]);
 
   function openCreateDialog() {
-    setEventInitialDate(null);
+    setEventInitialStartsAt(null);
+    setEventInitialEndsAt(null);
     setCreateDialogOpen(true);
   }
 
   function closeCreateDialog() {
     setCreateDialogOpen(false);
-    setEventInitialDate(null);
+    setEventInitialStartsAt(null);
+    setEventInitialEndsAt(null);
     onEventDateRequestConsumed?.();
   }
 
@@ -197,8 +216,8 @@ export function PageLayout({
         <EventCreateDialog
           open={createDialogOpen}
           title={createLabel}
-          initialStartsAt={eventInitialDate ?? undefined}
-          initialEndsAt={eventInitialDate ?? undefined}
+          initialStartsAt={eventInitialStartsAt ?? undefined}
+          initialEndsAt={eventInitialEndsAt ?? undefined}
           onClose={closeCreateDialog}
           onSubmit={handleEventSubmit}
         />
