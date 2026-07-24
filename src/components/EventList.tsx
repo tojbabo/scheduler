@@ -6,10 +6,40 @@ type LoadState =
   | { status: "error"; message: string }
   | { status: "ready"; events: Event[] };
 
-function formatRange(startsAt: string | null, endsAt: string | null): string | null {
-  if (!startsAt && !endsAt) return null;
-  if (startsAt && endsAt) return `${startsAt} ~ ${endsAt}`;
-  return startsAt ?? endsAt;
+function dateKey(value: string | null): string | null {
+  if (!value) return null;
+  const key = value.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(key) ? key : null;
+}
+
+function todayKey(now = new Date()): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** 일 단위 차이: toKey − fromKey */
+function dayDiff(fromKey: string, toKey: string): number {
+  const from = new Date(`${fromKey}T00:00:00`);
+  const to = new Date(`${toKey}T00:00:00`);
+  return Math.round((to.getTime() - from.getTime()) / 86_400_000);
+}
+
+function formatDayMeta(startsAt: string | null, endsAt: string | null): string | null {
+  const startKey = dateKey(startsAt);
+  const endKey = dateKey(endsAt);
+  const anchorKey = startKey ?? endKey;
+  if (!anchorKey) return null;
+
+  const n = dayDiff(todayKey(), anchorKey);
+  const dLabel = n < 0 ? `D${n}` : `D+${n}`;
+
+  if (startKey && endKey && startKey !== endKey) {
+    return `${dLabel} ~ ${dayDiff(startKey, endKey)}`;
+  }
+
+  return dLabel;
 }
 
 export function EventList() {
@@ -55,12 +85,14 @@ export function EventList() {
   return (
     <ul className="event-list">
       {load.events.map((event) => {
-        const range = formatRange(event.startsAt, event.endsAt);
+        const dayMeta = formatDayMeta(event.startsAt, event.endsAt);
 
         return (
           <li key={event.id} className="event-list__item">
-            <h4 className="event-list__title">{event.title}</h4>
-            {range ? <p className="event-list__range">{range}</p> : null}
+            <div className="event-list__heading">
+              <h4 className="event-list__title">{event.title}</h4>
+              {dayMeta ? <span className="event-list__meta">{dayMeta}</span> : null}
+            </div>
             {event.description ? (
               <p className="event-list__description">{event.description}</p>
             ) : null}

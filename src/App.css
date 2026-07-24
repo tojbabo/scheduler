@@ -438,8 +438,17 @@ button {
   border-bottom: 0;
 }
 
+.event-list__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .event-list__title {
   margin: 0;
+  flex: 1;
+  min-width: 0;
   font-size: 1rem;
   font-weight: 700;
   color: var(--text);
@@ -447,11 +456,14 @@ button {
   word-break: break-word;
 }
 
-.event-list__range {
-  margin: 0.2rem 0 0;
+.event-list__meta {
+  flex-shrink: 0;
   font-size: 0.75rem;
+  font-weight: 500;
   color: var(--muted);
-  line-height: 1.4;
+  line-height: 1.35;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .event-list__description {
