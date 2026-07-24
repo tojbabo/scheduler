@@ -17,7 +17,6 @@ export type EventDateRequest = {
 type PageLayoutProps = {
   eyebrow: string;
   title: string;
-  description?: string;
   children?: ReactNode;
   /** Create button label. When omitted, the button and dialog are hidden. */
   createLabel?: string;
@@ -40,7 +39,6 @@ type PageLayoutProps = {
 export function PageLayout({
   eyebrow,
   title,
-  description,
   children,
   createLabel,
   createKind = "plan",
@@ -88,7 +86,7 @@ export function PageLayout({
 
   function handleTaskSubmit(draft: TaskCreateDraft) {
     const fields = (
-      ["title", "description", "createdAt", "parentId"] as const
+      ["title", "createdAt", "parentId"] as const
     ).map((key) => {
       const value = draft[key];
       const filled = value.trim().length > 0;
@@ -122,7 +120,7 @@ export function PageLayout({
 
   function handleEventSubmit(draft: EventCreateDraft) {
     const fields = (
-      ["startsAt", "endsAt", "title", "description", "categoryId"] as const
+      ["startsAt", "endsAt", "title", "categoryId"] as const
     ).map((key) => {
       const value = draft[key];
       const filled = value.trim().length > 0;
@@ -160,9 +158,6 @@ export function PageLayout({
         <div className="page-head__text">
           <p className="page-head__eyebrow">{eyebrow}</p>
           <h2 className="page-head__heading">{title}</h2>
-          {description ? (
-            <p className="page-head__copy">{description}</p>
-          ) : null}
         </div>
 
         <div className="page-head__actions">

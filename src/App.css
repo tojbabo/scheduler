@@ -16,7 +16,7 @@
   --field-bg: #ffffff;
   --nav-collapsed: 4.25rem;
   --nav-expanded: 14.5rem;
-  --drag-h: 3rem;
+  --drag-h: 2rem;
   --z-nav: 1000;
 
   font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
@@ -344,11 +344,6 @@ button {
   font-size: 1.65rem;
   font-weight: 650;
   letter-spacing: -0.02em;
-}
-
-.page-head__copy {
-  margin: 0.7rem 0 0;
-  color: var(--muted);
 }
 
 .page__body {
@@ -841,7 +836,10 @@ button {
 }
 
 .calendar__cell {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
   width: 100%;
   min-height: 0;
   margin: 0;
@@ -855,6 +853,7 @@ button {
   text-align: left;
   cursor: pointer;
   appearance: none;
+  overflow: hidden;
   transition: background-color 0.12s ease;
 }
 
@@ -878,6 +877,7 @@ button {
 
 .calendar__day {
   display: inline-grid;
+  flex: 0 0 auto;
   place-items: center;
   min-width: 1.65rem;
   height: 1.65rem;
@@ -907,4 +907,35 @@ button {
 
 .calendar__cell--weekend .calendar__day--today {
   color: var(--field-bg);
+}
+
+.calendar__events {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.15rem;
+  width: 100%;
+  min-height: 0;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+}
+
+.calendar__event-title {
+  margin: 0;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 550;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar__cell--muted .calendar__event-title {
+  opacity: 0.72;
 }

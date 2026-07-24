@@ -9,7 +9,6 @@ export function Schedule() {
     <PageLayout
       eyebrow="계획"
       title="계획"
-      description="계획을 관리하는 화면입니다."
       createLabel="계획 추가"
       createKind="plan"
       onTaskCreated={() => setRefreshKey((key) => key + 1)}

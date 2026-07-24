@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { listEvents, type Event } from "../bridge/db";
 import { PageLayout, type EventDateRequest } from "../layout/PageLayout";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
@@ -52,6 +53,25 @@ function toDateInputValue(date: Date): string {
   ].join("-");
 }
 
+/** Extract `YYYY-MM-DD` for date-only comparison. */
+function toDateKey(value: string): string | null {
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(value.trim());
+  return match?.[1] ?? null;
+}
+
+/** Inclusive range when both ends exist; single-day if only one; skip if neither. */
+function eventOccursOnDay(event: Event, dayKey: string): boolean {
+  const start = event.startsAt ? toDateKey(event.startsAt) : null;
+  const end = event.endsAt ? toDateKey(event.endsAt) : null;
+  if (start == null && end == null) return false;
+  if (start != null && end != null) return dayKey >= start && dayKey <= end;
+  return dayKey === (start ?? end);
+}
+
+function eventsForDay(events: Event[], dayKey: string): Event[] {
+  return events.filter((event) => eventOccursOnDay(event, dayKey));
+}
+
 export function Calendar() {
   const today = new Date();
   const [cursor, setCursor] = useState(() =>
@@ -59,10 +79,31 @@ export function Calendar() {
   );
   const [eventDateRequest, setEventDateRequest] =
     useState<EventDateRequest | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [eventsVersion, setEventsVersion] = useState(0);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
   const cells = buildMonthCells(year, month);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listEvents()
+      .then((rows) => {
+        if (!cancelled) setEvents(rows);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          console.error("[Calendar] listEvents failed", err);
+          setEvents([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [eventsVersion]);
 
   function goPrevMonth() {
     setCursor(startOfMonth(year, month - 1));
@@ -79,15 +120,19 @@ export function Calendar() {
     });
   }
 
+  function refreshEvents() {
+    setEventsVersion((v) => v + 1);
+  }
+
   return (
     <PageLayout
       eyebrow="Calendar"
       title="캘린더"
-      description="달력 형태로 일정을 보는 화면입니다."
       createLabel="일정 추가"
       createKind="event"
       eventDateRequest={eventDateRequest}
       onEventDateRequestConsumed={() => setEventDateRequest(null)}
+      onEventCreated={refreshEvents}
     >
       <div className="calendar">
         <div className="calendar__toolbar">
@@ -142,6 +187,7 @@ export function Calendar() {
             const isToday = isSameDay(cell.date, today);
             const weekday = cell.date.getDay();
             const isWeekend = weekday === 0 || weekday === 6;
+            const dayEvents = eventsForDay(events, iso);
             const cellClass = [
               "calendar__cell",
               cell.inMonth ? "" : "calendar__cell--muted",
@@ -158,7 +204,11 @@ export function Calendar() {
                 className={cellClass}
                 role="gridcell"
                 aria-current={isToday ? "date" : undefined}
-                aria-label={`${iso} 일정 추가`}
+                aria-label={
+                  dayEvents.length > 0
+                    ? `${iso} 일정 추가, ${dayEvents.map((e) => e.title).join(", ")}`
+                    : `${iso} 일정 추가`
+                }
                 onClick={() => requestEventForDate(cell.date)}
               >
                 <span
@@ -168,6 +218,15 @@ export function Calendar() {
                 >
                   {cell.date.getDate()}
                 </span>
+                {dayEvents.length > 0 ? (
+                  <ul className="calendar__events">
+                    {dayEvents.map((event) => (
+                      <li key={event.id} className="calendar__event-title">
+                        {event.title}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </button>
             );
           })}
