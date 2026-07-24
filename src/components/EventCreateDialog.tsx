@@ -11,16 +11,29 @@ export type EventCreateDraft = {
   categoryId: string; // UI string; empty = none
 };
 
+/** Prefill shape for edit mode (`startsAt` / `endsAt` are date-only `YYYY-MM-DD`). */
+export type EventCreateInitial = {
+  startsAt: string;
+  endsAt: string;
+  title: string;
+  description: string;
+  categoryId: string;
+};
+
 type EventCreateDialogProps = {
   open: boolean;
   onClose: () => void;
-  /** Dialog heading; defaults to "일정 추가". */
+  /** `create` (default) or `edit` — affects defaults for heading / submit label. */
+  mode?: "create" | "edit";
+  /** Dialog heading; defaults to "일정 추가" / "일정 수정" by mode. */
   title?: string;
-  /** Prefill start date (`YYYY-MM-DD`) when the dialog opens. */
+  /** Prefill start date (`YYYY-MM-DD`) when the dialog opens in create mode. */
   initialStartsAt?: string;
-  /** Prefill end date (`YYYY-MM-DD`) when the dialog opens. */
+  /** Prefill end date (`YYYY-MM-DD`) when the dialog opens in create mode. */
   initialEndsAt?: string;
-  /** UI-only for now; persistence belongs to agent-data. */
+  /** Prefill all fields when the dialog opens in edit mode. */
+  initialEvent?: EventCreateInitial;
+  /** Parent branches create vs update; draft shape is the same. */
   onSubmit?: (draft: EventCreateDraft) => void;
 };
 
@@ -34,9 +47,11 @@ function dateToMidnightLocal(date: string): string {
 export function EventCreateDialog({
   open,
   onClose,
-  title: dialogTitle = "일정 추가",
+  mode = "create",
+  title: dialogTitle,
   initialStartsAt,
   initialEndsAt,
+  initialEvent,
   onSubmit,
 }: EventCreateDialogProps) {
   const titleId = useId();
@@ -47,14 +62,26 @@ export function EventCreateDialog({
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
 
+  const heading =
+    dialogTitle ?? (mode === "edit" ? "일정 수정" : "일정 추가");
+  const submitLabel = mode === "edit" ? "수정" : "추가";
+
   useEffect(() => {
     if (!open) return;
+    if (mode === "edit" && initialEvent != null) {
+      setStartsAt(initialEvent.startsAt);
+      setEndsAt(initialEvent.endsAt);
+      setTitle(initialEvent.title);
+      setDescription(initialEvent.description);
+      setCategoryId(initialEvent.categoryId);
+      return;
+    }
     setStartsAt(initialStartsAt ?? "");
     setEndsAt(initialEndsAt ?? "");
     setTitle("");
     setDescription("");
     setCategoryId("");
-  }, [open, initialStartsAt, initialEndsAt]);
+  }, [open, mode, initialEvent, initialStartsAt, initialEndsAt]);
 
   useEffect(() => {
     if (!open) return;
@@ -96,7 +123,7 @@ export function EventCreateDialog({
       >
         <header className="dialog__header">
           <h3 id={titleId} className="dialog__title">
-            {dialogTitle}
+            {heading}
           </h3>
           <button
             type="button"
@@ -178,7 +205,7 @@ export function EventCreateDialog({
               취소
             </button>
             <button type="submit" className="btn btn--primary">
-              추가
+              {submitLabel}
             </button>
           </div>
         </form>

@@ -4,7 +4,16 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { listEvents, type Event } from "../bridge/db";
+import {
+  listEvents,
+  updateEventFromUiDraft,
+  type Event,
+} from "../bridge/db";
+import {
+  EventCreateDialog,
+  type EventCreateDraft,
+  type EventCreateInitial,
+} from "../components/EventCreateDialog";
 import { PageLayout, type EventDateRequest } from "../layout/PageLayout";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
@@ -63,7 +72,7 @@ function toDateInputValue(date: Date): string {
   ].join("-");
 }
 
-/** Extract `YYYY-MM-DD` for date-only comparison. */
+/** Extract `YYYY-MM-DD` for date-only comparison / date inputs. */
 function toDateKey(value: string): string | null {
   const match = /^(\d{4}-\d{2}-\d{2})/.exec(value.trim());
   return match?.[1] ?? null;
@@ -103,6 +112,17 @@ function orderedRange(a: string, b: string): [string, string] {
   return a <= b ? [a, b] : [b, a];
 }
 
+/** Event row → dialog edit prefill (`YYYY-MM-DD` date parts). */
+function eventToInitial(event: Event): EventCreateInitial {
+  return {
+    startsAt: event.startsAt ? (toDateKey(event.startsAt) ?? "") : "",
+    endsAt: event.endsAt ? (toDateKey(event.endsAt) ?? "") : "",
+    title: event.title,
+    description: event.description ?? "",
+    categoryId: event.categoryId != null ? String(event.categoryId) : "",
+  };
+}
+
 export function Calendar() {
   const today = new Date();
   const [cursor, setCursor] = useState(() =>
@@ -115,6 +135,11 @@ export function Calendar() {
   const [dragSelection, setDragSelection] = useState<DragSelection | null>(
     null,
   );
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [editInitial, setEditInitial] = useState<EventCreateInitial | null>(
+    null,
+  );
+  const [editError, setEditError] = useState<string | null>(null);
   const dragSelectionRef = useRef(dragSelection);
   dragSelectionRef.current = dragSelection;
 
@@ -196,6 +221,42 @@ export function Calendar() {
     setEventsVersion((v) => v + 1);
   }
 
+  function openEditEvent(event: Event) {
+    setEditError(null);
+    setEditingEvent(event);
+    setEditInitial(eventToInitial(event));
+  }
+
+  function closeEditDialog() {
+    setEditingEvent(null);
+    setEditInitial(null);
+  }
+
+  function handleEditSubmit(draft: EventCreateDraft) {
+    if (editingEvent == null) return;
+    const id = editingEvent.id;
+    setEditError(null);
+
+    void updateEventFromUiDraft(id, draft)
+      .then((updated) => {
+        console.log("[Calendar] event updated", updated);
+        refreshEvents();
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : "일정을 수정하지 못했습니다.";
+        console.error("[Calendar] updateEvent failed", err);
+        setEditError(message);
+      });
+  }
+
+  function handleEventTitlePointerDown(
+    e: ReactPointerEvent<HTMLLIElement>,
+  ) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
   return (
     <PageLayout
       eyebrow="Calendar"
@@ -206,6 +267,12 @@ export function Calendar() {
       onEventDateRequestConsumed={() => setEventDateRequest(null)}
       onEventCreated={refreshEvents}
     >
+      {editError ? (
+        <p className="page__status page__status--error" role="alert">
+          {editError}
+        </p>
+      ) : null}
+
       <div className="calendar">
         <div className="calendar__toolbar">
           <h3 className="calendar__title">{monthTitle(year, month)}</h3>
@@ -308,6 +375,12 @@ export function Calendar() {
                       <li
                         key={event.id}
                         className={`calendar__event-title ${eventCategoryClass(event.categoryId)}`}
+                        onPointerDown={handleEventTitlePointerDown}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          openEditEvent(event);
+                        }}
                       >
                         {event.title}
                       </li>
@@ -319,6 +392,14 @@ export function Calendar() {
           })}
         </div>
       </div>
+
+      <EventCreateDialog
+        open={editingEvent != null}
+        mode="edit"
+        initialEvent={editInitial ?? undefined}
+        onClose={closeEditDialog}
+        onSubmit={handleEditSubmit}
+      />
     </PageLayout>
   );
 }

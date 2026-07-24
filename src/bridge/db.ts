@@ -224,6 +224,46 @@ export function updateEvent(input: UpdateEventInput): Promise<Event> {
   return invoke<Event>("update_event", { input });
 }
 
+/** Local `YYYY-MM-DDTHH:MM` for `updatedAt` (matches Rust `normalize_iso_timestamp`). */
+function nowLocalTimestamp(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * Map UI string draft → update payload and persist.
+ * Empty starts/ends/category/description → null; `updatedAt` is now (local).
+ */
+export function updateEventFromUiDraft(
+  id: number,
+  draft: EventUiDraft,
+): Promise<Event> {
+  const startsAt = draft.startsAt.trim();
+  const endsAt = draft.endsAt.trim();
+  const description = draft.description.trim();
+  const categoryRaw = draft.categoryId.trim();
+
+  let categoryId: number | null = null;
+  if (categoryRaw.length > 0) {
+    const n = Number(categoryRaw);
+    if (!Number.isInteger(n) || n < 0) {
+      return Promise.reject(new Error("categoryId must be a non-negative integer"));
+    }
+    categoryId = n;
+  }
+
+  return updateEvent({
+    id,
+    title: draft.title.trim(),
+    description: description.length > 0 ? description : null,
+    startsAt: startsAt.length > 0 ? startsAt : null,
+    endsAt: endsAt.length > 0 ? endsAt : null,
+    categoryId,
+    updatedAt: nowLocalTimestamp(),
+  });
+}
+
 /** Delete an event by id. */
 export function deleteEvent(id: number): Promise<void> {
   return invoke<void>("delete_event", { id });
