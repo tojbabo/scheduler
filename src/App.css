@@ -937,14 +937,37 @@ button {
   margin: 0;
   padding: 0.1rem 0.3rem;
   border-radius: 3px;
-  background: var(--accent-soft);
-  color: var(--accent);
   font-size: 0.65rem;
   font-weight: 550;
   line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.calendar__event-title--other {
+  background: #e8e6e3;
+  color: #5c5a57;
+}
+
+.calendar__event-title--family {
+  background: #d6e6f5;
+  color: #2a5f8f;
+}
+
+.calendar__event-title--friends {
+  background: #d8efdf;
+  color: #2d6b45;
+}
+
+.calendar__event-title--work {
+  background: #f5d9d6;
+  color: #a03a32;
+}
+
+.calendar__event-title--health {
+  background: #f5e4d0;
+  color: #b05e1a;
 }
 
 .calendar__cell--muted .calendar__event-title {

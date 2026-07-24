@@ -82,6 +82,23 @@ function eventsForDay(events: Event[], dayKey: string): Event[] {
   return events.filter((event) => eventOccursOnDay(event, dayKey));
 }
 
+/** CSS modifier from category id (0 기타 … 4 운동). */
+function eventCategoryClass(categoryId: number | null): string {
+  switch (categoryId) {
+    case 1:
+      return "calendar__event-title--family";
+    case 2:
+      return "calendar__event-title--friends";
+    case 3:
+      return "calendar__event-title--work";
+    case 4:
+      return "calendar__event-title--health";
+    case 0:
+    default:
+      return "calendar__event-title--other";
+  }
+}
+
 function orderedRange(a: string, b: string): [string, string] {
   return a <= b ? [a, b] : [b, a];
 }
@@ -288,7 +305,10 @@ export function Calendar() {
                 {dayEvents.length > 0 ? (
                   <ul className="calendar__events">
                     {dayEvents.map((event) => (
-                      <li key={event.id} className="calendar__event-title">
+                      <li
+                        key={event.id}
+                        className={`calendar__event-title ${eventCategoryClass(event.categoryId)}`}
+                      >
                         {event.title}
                       </li>
                     ))}
