@@ -54,7 +54,10 @@ export type UpdateTaskInput = {
   state: number;
 };
 
-/** Full update payload for an event (`createdAt` is not changed). */
+/**
+ * Full update payload for an event.
+ * `createdAt` unchanged; `updatedAt` set on the server to now.
+ */
 export type UpdateEventInput = {
   id: number;
   title: string;
@@ -62,7 +65,6 @@ export type UpdateEventInput = {
   startsAt?: string | null;
   endsAt?: string | null;
   categoryId?: number | null;
-  updatedAt: string;
 };
 
 /**
@@ -251,21 +253,14 @@ export function createEventFromUiDraft(draft: EventUiDraft): Promise<Event> {
   });
 }
 
-/** Replace an event by id; returns the updated row. */
+/** Replace an event by id; server sets updatedAt to now. */
 export function updateEvent(input: UpdateEventInput): Promise<Event> {
   return invoke<Event>("update_event", { input });
 }
 
-/** Local `YYYY-MM-DDTHH:MM` for `updatedAt` (matches Rust `normalize_iso_timestamp`). */
-function nowLocalTimestamp(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 /**
  * Map UI string draft → update payload and persist.
- * Empty starts/ends/category/description → null; `updatedAt` is now (local).
+ * Empty starts/ends/category/description → null; updatedAt set by Rust.
  */
 export function updateEventFromUiDraft(
   id: number,
@@ -292,7 +287,6 @@ export function updateEventFromUiDraft(
     startsAt: startsAt.length > 0 ? startsAt : null,
     endsAt: endsAt.length > 0 ? endsAt : null,
     categoryId,
-    updatedAt: nowLocalTimestamp(),
   });
 }
 

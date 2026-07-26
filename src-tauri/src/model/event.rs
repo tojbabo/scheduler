@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::common::time::{normalize_iso_timestamp, normalize_optional_iso_timestamp};
+use crate::common::time::normalize_optional_iso_timestamp;
 use crate::common::{Category, DbError};
 
 /// Row for events list / detail APIs.
@@ -33,7 +33,8 @@ pub struct CreateEventInput {
     pub category_id: Option<i64>,
 }
 
-/// Full update payload (PUT-style). `created_at` is not changed.
+/// Full update payload (PUT-style).
+/// `created_at` unchanged; `updated_at` set server-side to now.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateEventInput {
@@ -47,8 +48,6 @@ pub struct UpdateEventInput {
     pub ends_at: Option<String>,
     #[serde(default)]
     pub category_id: Option<i64>,
-    /// Client-supplied update time (ISO).
-    pub updated_at: String,
 }
 
 /// Validated fields ready for the DB backend (insert).
@@ -70,7 +69,6 @@ pub struct EventPatch {
     pub starts_at: Option<String>,
     pub ends_at: Option<String>,
     pub category_id: Option<i64>,
-    pub updated_at: String,
 }
 
 fn normalize_title(title: &str) -> Result<String, DbError> {
@@ -137,7 +135,6 @@ impl UpdateEventInput {
         let description = normalize_description(self.description);
         let starts_at = normalize_optional_iso_timestamp(self.starts_at.as_deref())?;
         let ends_at = normalize_optional_iso_timestamp(self.ends_at.as_deref())?;
-        let updated_at = normalize_iso_timestamp(&self.updated_at)?;
         validate_range(&starts_at, &ends_at)?;
         validate_category_id(self.category_id)?;
 
@@ -148,7 +145,6 @@ impl UpdateEventInput {
             starts_at,
             ends_at,
             category_id: self.category_id,
-            updated_at,
         })
     }
 }

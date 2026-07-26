@@ -237,13 +237,16 @@ impl Database for SqliteDatabase {
             return Err(DbError::new(format!("event {} not found", patch.id)));
         }
 
-        let updated = conn.execute(
+        let sql = format!(
             "UPDATE events
-             SET updated_at = ?1, starts_at = ?2, ends_at = ?3,
-                 title = ?4, description = ?5, category_id = ?6
-             WHERE id = ?7",
+             SET updated_at = {SQLITE_NOW_LOCAL_ISO},
+                 starts_at = ?1, ends_at = ?2,
+                 title = ?3, description = ?4, category_id = ?5
+             WHERE id = ?6"
+        );
+        let updated = conn.execute(
+            &sql,
             params![
-                patch.updated_at,
                 patch.starts_at,
                 patch.ends_at,
                 patch.title,
