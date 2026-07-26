@@ -5,21 +5,21 @@ use std::fmt;
 #[repr(i64)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Category {
-    other = 0,
-    family = 1,
-    friends = 2,
-    work = 3,
-    health = 4,
+    Other = 0,
+    Family = 1,
+    Friends = 2,
+    Work = 3,
+    Health = 4,
 }
 
 impl Category {
     /// All categories in display / id order.
     pub const ALL: [Category; 5] = [
-        Self::other,
-        Self::family,
-        Self::friends,
-        Self::work,
-        Self::health,
+        Self::Other,
+        Self::Family,
+        Self::Friends,
+        Self::Work,
+        Self::Health,
     ];
 
     /// DB `categories.id`.
@@ -33,11 +33,11 @@ impl TryFrom<i64> for Category {
 
     fn try_from(value: i64) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(Self::other),
-            1 => Ok(Self::family),
-            2 => Ok(Self::friends),
-            3 => Ok(Self::work),
-            4 => Ok(Self::health),
+            0 => Ok(Self::Other),
+            1 => Ok(Self::Family),
+            2 => Ok(Self::Friends),
+            3 => Ok(Self::Work),
+            4 => Ok(Self::Health),
             _ => Err(()),
         }
     }
@@ -46,11 +46,11 @@ impl TryFrom<i64> for Category {
 impl fmt::Display for Category {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
-            Self::other => "기타",
-            Self::family => "가족",
-            Self::friends => "친구",
-            Self::work => "회사",
-            Self::health => "운동",
+            Self::Other => "기타",
+            Self::Family => "가족",
+            Self::Friends => "친구",
+            Self::Work => "회사",
+            Self::Health => "운동",
         };
         f.write_str(label)
     }
