@@ -181,6 +181,38 @@ export function createTaskFromUiDraft(draft: TaskUiDraft): Promise<Task> {
   });
 }
 
+/**
+ * Map UI string draft → update payload and persist.
+ * Keeps `existing.state`; maps title / description / createdAt / parentId from draft.
+ * Empty parentId → null (root). Empty description → null.
+ */
+export function updateTaskFromUiDraft(
+  existing: Task,
+  draft: TaskUiDraft,
+): Promise<Task> {
+  const parentRaw = draft.parentId.trim();
+
+  let parentId: number | null = null;
+  if (parentRaw.length > 0) {
+    const n = Number(parentRaw);
+    if (!Number.isInteger(n) || n <= 0) {
+      return Promise.reject(new Error("parentId must be a positive integer"));
+    }
+    parentId = n;
+  }
+
+  const description = draft.description.trim();
+
+  return updateTask({
+    id: existing.id,
+    title: draft.title.trim(),
+    description: description.length > 0 ? description : null,
+    createdAt: draft.createdAt.trim(),
+    parentId,
+    state: existing.state,
+  });
+}
+
 /** All events, ordered by starts_at (nulls last), then id. */
 export function listEvents(): Promise<Event[]> {
   return invoke<Event[]>("list_events");

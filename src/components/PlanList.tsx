@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
-import { deleteTask, listTasks, updateTaskState, type Task } from "../bridge/db";
+import {
+  deleteTask,
+  listTasks,
+  updateTaskFromUiDraft,
+  updateTaskState,
+  type Task,
+} from "../bridge/db";
+import {
+  TaskCreateDialog,
+  type TaskCreateDraft,
+  type TaskCreateInitial,
+} from "./TaskCreateDialog";
 
 type LoadState =
   | { status: "loading" }
@@ -22,6 +33,15 @@ type PlanListProps = {
   refreshKey?: number;
 };
 
+function taskToInitial(task: Task): TaskCreateInitial {
+  return {
+    title: task.title,
+    description: task.description ?? "",
+    createdAt: task.createdAt.slice(0, 16),
+    parentId: task.parentId != null ? String(task.parentId) : "",
+  };
+}
+
 export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) {
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
   const [localRefreshKey, setLocalRefreshKey] = useState(0);
@@ -29,6 +49,11 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [stateError, setStateError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editInitial, setEditInitial] = useState<TaskCreateInitial | null>(
+    null,
+  );
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +124,52 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
       });
   }
 
+  function openEditDialog(task: Task) {
+    setEditError(null);
+    setEditingTask(task);
+    setEditInitial(taskToInitial(task));
+  }
+
+  function closeEditDialog() {
+    setEditingTask(null);
+    setEditInitial(null);
+  }
+
+  function handleEditSubmit(draft: TaskCreateDraft) {
+    if (editingTask == null) return;
+    const existing = editingTask;
+    setEditError(null);
+
+    void updateTaskFromUiDraft(existing, draft)
+      .then(() => {
+        loadTasks();
+      })
+      .catch((err: unknown) => {
+        console.error("[TaskUpdate] failed", err);
+        const message =
+          err instanceof Error ? err.message : "계획을 수정하지 못했습니다.";
+        setEditError(message);
+      });
+  }
+
+  function handleEditDelete() {
+    if (editingTask == null) return;
+    const id = editingTask.id;
+    setEditError(null);
+
+    void deleteTask(id)
+      .then(() => {
+        closeEditDialog();
+        loadTasks();
+      })
+      .catch((err: unknown) => {
+        console.error("[TaskDelete] failed", err);
+        const message =
+          err instanceof Error ? err.message : "계획을 삭제하지 못했습니다.";
+        setEditError(message);
+      });
+  }
+
   return (
     <>
       {load.status === "loading" ? (
@@ -123,6 +194,12 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
         </p>
       ) : null}
 
+      {interactive && editError ? (
+        <p className="page__status page__status--error" role="alert">
+          {editError}
+        </p>
+      ) : null}
+
       {load.status === "ready" && load.tasks.length === 0 ? (
         <p className="page__status">등록된 계획이 없습니다.</p>
       ) : null}
@@ -130,7 +207,15 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
       {load.status === "ready" && load.tasks.length > 0 ? (
         <ul className="task-list">
           {load.tasks.map((task) => (
-            <li key={task.id} className="task-list__item">
+            <li
+              key={task.id}
+              className={
+                interactive
+                  ? "task-list__item task-list__item--interactive"
+                  : "task-list__item"
+              }
+              onClick={interactive ? () => openEditDialog(task) : undefined}
+            >
               <div className="task-list__body">
                 <div className="task-list__header">
                   <h3 className="task-list__title">{task.title}</h3>
@@ -140,6 +225,7 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
                       value={task.state}
                       aria-label={`${task.title} 상태`}
                       disabled={updatingId !== null}
+                      onClick={(event) => event.stopPropagation()}
                       onChange={(event) =>
                         handleStateChange(task, Number(event.target.value))
                       }
@@ -171,7 +257,10 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
                   className="task-list__delete"
                   aria-label="삭제"
                   disabled={deletingId !== null || updatingId !== null}
-                  onClick={() => handleDelete(task.id)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleDelete(task.id);
+                  }}
                 >
                   ×
                 </button>
@@ -179,6 +268,17 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {interactive ? (
+        <TaskCreateDialog
+          open={editingTask != null}
+          mode="edit"
+          initialTask={editInitial ?? undefined}
+          onClose={closeEditDialog}
+          onSubmit={handleEditSubmit}
+          onDelete={handleEditDelete}
+        />
       ) : null}
     </>
   );

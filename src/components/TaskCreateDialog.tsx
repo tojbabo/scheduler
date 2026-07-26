@@ -7,13 +7,27 @@ export type TaskCreateDraft = {
   parentId: string;
 };
 
+/** Prefill shape for edit mode (`createdAt` is `datetime-local` `YYYY-MM-DDTHH:MM`). */
+export type TaskCreateInitial = {
+  title: string;
+  description: string;
+  createdAt: string;
+  parentId: string;
+};
+
 type TaskCreateDialogProps = {
   open: boolean;
   onClose: () => void;
-  /** Dialog heading; defaults to "계획 추가". */
+  /** `create` (default) or `edit` — affects defaults for heading / submit label. */
+  mode?: "create" | "edit";
+  /** Dialog heading; defaults to "계획 추가" / "계획 수정" by mode. */
   title?: string;
-  /** UI-only for now; persistence belongs to agent-data. */
+  /** Prefill all fields when the dialog opens in edit mode. */
+  initialTask?: TaskCreateInitial;
+  /** Parent branches create vs update; draft shape is the same. */
   onSubmit?: (draft: TaskCreateDraft) => void;
+  /** Edit mode only: delete current task (parent calls API). */
+  onDelete?: () => void;
 };
 
 function nowLocalInputValue(): string {
@@ -22,11 +36,19 @@ function nowLocalInputValue(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** ISO / datetime string → `datetime-local` value (first 16 chars). */
+function toDatetimeLocalValue(value: string): string {
+  return value.slice(0, 16);
+}
+
 export function TaskCreateDialog({
   open,
   onClose,
-  title: dialogTitle = "계획 추가",
+  mode = "create",
+  title: dialogTitle,
+  initialTask,
   onSubmit,
+  onDelete,
 }: TaskCreateDialogProps) {
   const titleId = useId();
   const [title, setTitle] = useState("");
@@ -34,13 +56,24 @@ export function TaskCreateDialog({
   const [createdAt, setCreatedAt] = useState(nowLocalInputValue);
   const [parentId, setParentId] = useState("");
 
+  const heading =
+    dialogTitle ?? (mode === "edit" ? "계획 수정" : "계획 추가");
+  const submitLabel = mode === "edit" ? "수정" : "추가";
+
   useEffect(() => {
     if (!open) return;
+    if (mode === "edit" && initialTask != null) {
+      setTitle(initialTask.title);
+      setDescription(initialTask.description);
+      setCreatedAt(toDatetimeLocalValue(initialTask.createdAt));
+      setParentId(initialTask.parentId);
+      return;
+    }
     setTitle("");
     setDescription("");
     setCreatedAt(nowLocalInputValue());
     setParentId("");
-  }, [open]);
+  }, [open, mode, initialTask]);
 
   useEffect(() => {
     if (!open) return;
@@ -81,7 +114,7 @@ export function TaskCreateDialog({
       >
         <header className="dialog__header">
           <h3 id={titleId} className="dialog__title">
-            {dialogTitle}
+            {heading}
           </h3>
           <button
             type="button"
@@ -110,7 +143,9 @@ export function TaskCreateDialog({
             <select
               className="field__control"
               value={parentId}
-              onChange={(e) => setParentId(e.target.value)}>
+              onChange={(e) => setParentId(e.target.value)}
+            >
+              <option value="">선택 안 함</option>
             </select>
           </label>
 
@@ -139,11 +174,20 @@ export function TaskCreateDialog({
           </label>
 
           <div className="dialog__actions">
+            {mode === "edit" && onDelete != null ? (
+              <button
+                type="button"
+                className="btn btn--danger"
+                onClick={onDelete}
+              >
+                삭제
+              </button>
+            ) : null}
             <button type="button" className="btn btn--ghost" onClick={onClose}>
               취소
             </button>
             <button type="submit" className="btn btn--primary">
-              추가
+              {submitLabel}
             </button>
           </div>
         </form>
