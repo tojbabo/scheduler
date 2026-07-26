@@ -1,6 +1,6 @@
 use crate::common::DbError;
 use crate::model::event::{EventDto, EventPatch, NewEvent};
-use crate::model::task::{NewTask, TaskDto, TaskPatch};
+use crate::model::task::{NewTask, TaskDto, TaskPatch, TaskReorder};
 
 /// Backend-agnostic database handle.
 /// Swap SQLite for another engine by implementing this trait.
@@ -17,14 +17,17 @@ pub trait Database: Send + Sync {
     /// Connection / file location summary for diagnostics.
     fn location(&self) -> String;
 
-    /// All tasks, ordered by id ascending (stable tree-friendly order).
+    /// All tasks, ordered by parent then fractional rank.
     fn list_tasks(&self) -> Result<Vec<TaskDto>, DbError>;
 
-    /// Insert a task; `id` is assigned by AUTOINCREMENT.
+    /// Insert a task; `id` / `rank` assigned by the backend.
     fn create_task(&self, task: &NewTask) -> Result<TaskDto, DbError>;
 
-    /// Replace task fields by id.
+    /// Replace task fields by id (keeps rank unless parent changes).
     fn update_task(&self, patch: &TaskPatch) -> Result<TaskDto, DbError>;
+
+    /// Move a task among siblings by rewriting only its `rank`.
+    fn reorder_task(&self, reorder: &TaskReorder) -> Result<TaskDto, DbError>;
 
     /// Delete a task by id (children cascade).
     fn delete_task(&self, id: i64) -> Result<(), DbError>;

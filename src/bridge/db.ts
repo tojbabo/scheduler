@@ -7,7 +7,7 @@ export type DbStatus = {
   schemaApplied: boolean;
 };
 
-/** Persisted task row (`id` is DB-assigned). */
+/** Persisted task row (`id` / `rank` are DB-assigned). */
 export type Task = {
   id: number;
   title: string;
@@ -15,6 +15,14 @@ export type Task = {
   createdAt: string;
   parentId: number | null;
   state: number;
+  /** Fractional sibling order; lexicographic ascending = top → bottom. */
+  rank: string;
+};
+
+/** Move a task among siblings (`afterId: null` = top). */
+export type ReorderTaskInput = {
+  id: number;
+  afterId?: number | null;
 };
 
 /** Persisted event row (`id` is DB-assigned). */
@@ -117,7 +125,7 @@ export function getDbStatus(): Promise<DbStatus> {
   return invoke<DbStatus>("db_status");
 }
 
-/** All tasks, ordered by id ascending. */
+/** All tasks, ordered by parent then fractional rank. */
 export function listTasks(): Promise<Task[]> {
   return invoke<Task[]>("list_tasks");
 }
@@ -148,6 +156,19 @@ export function updateTaskState(task: Task, state: number): Promise<Task> {
     createdAt: task.createdAt,
     parentId: task.parentId,
     state,
+  });
+}
+
+/**
+ * Reorder a task among siblings. Usually updates only that row's `rank`.
+ * `afterId` omitted/null → move to top of the sibling list.
+ */
+export function reorderTask(input: ReorderTaskInput): Promise<Task> {
+  return invoke<Task>("reorder_task", {
+    input: {
+      id: input.id,
+      afterId: input.afterId ?? null,
+    },
   });
 }
 

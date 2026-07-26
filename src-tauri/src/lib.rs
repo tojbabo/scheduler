@@ -5,7 +5,7 @@ mod repo;
 
 use api::{
     create_event, create_task, delete_event, delete_task, list_categories, list_events,
-    list_tasks, update_event, update_task,
+    list_tasks, reorder_task, update_event, update_task,
 };
 use common::{db_status, init_database};
 use tauri::Manager;
@@ -31,6 +31,7 @@ pub fn run() {
             list_tasks,
             create_task,
             update_task,
+            reorder_task,
             delete_task,
             list_events,
             create_event,

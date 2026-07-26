@@ -5,9 +5,9 @@ use crate::common::DbError;
 
 /// Values allowed by `tasks.state` CHECK constraint.
 pub const TASK_STATE_MIN: i64 = 0;
-pub const TASK_STATE_MAX: i64 = 4;
-/// Default when the UI omits state: 예정.
-pub const TASK_STATE_DEFAULT: i64 = 3;
+pub const TASK_STATE_MAX: i64 = 3;
+/// Default when the UI omits state: 완료 전 기본값과 별개 — create 경로에서는 보통 0을 보냄.
+pub const TASK_STATE_DEFAULT: i64 = 0;
 
 /// Row returned after insert / for list APIs.
 #[derive(Debug, Clone, Serialize)]
@@ -19,9 +19,11 @@ pub struct TaskDto {
     pub created_at: String,
     pub parent_id: Option<i64>,
     pub state: i64,
+    /// Fractional order among siblings (lexicographic ascending = top → bottom).
+    pub rank: String,
 }
 
-/// Payload for inserting a task (`id` is AUTOINCREMENT — not accepted).
+/// Payload for inserting a task (`id` / `rank` assigned server-side).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTaskInput {
@@ -31,12 +33,12 @@ pub struct CreateTaskInput {
     pub created_at: String,
     #[serde(default)]
     pub parent_id: Option<i64>,
-    /// Omit or null → [`TASK_STATE_DEFAULT`] (예정).
+    /// Omit or null → [`TASK_STATE_DEFAULT`].
     #[serde(default)]
     pub state: Option<i64>,
 }
 
-/// Full update payload (PUT-style).
+/// Full update payload (PUT-style). Does not change `rank`.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateTaskInput {
@@ -48,6 +50,16 @@ pub struct UpdateTaskInput {
     #[serde(default)]
     pub parent_id: Option<i64>,
     pub state: i64,
+}
+
+/// Move a task among its siblings. Almost always a single-row `rank` update.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReorderTaskInput {
+    pub id: i64,
+    /// Place immediately after this sibling. `None` = move to top of the sibling list.
+    #[serde(default)]
+    pub after_id: Option<i64>,
 }
 
 /// Validated fields ready for the DB backend (insert).
@@ -69,6 +81,13 @@ pub struct TaskPatch {
     pub created_at: String,
     pub parent_id: Option<i64>,
     pub state: i64,
+}
+
+/// Validated reorder request.
+#[derive(Debug, Clone)]
+pub struct TaskReorder {
+    pub id: i64,
+    pub after_id: Option<i64>,
 }
 
 fn normalize_title(title: &str) -> Result<String, DbError> {
@@ -143,6 +162,26 @@ impl UpdateTaskInput {
             created_at,
             parent_id: self.parent_id,
             state: self.state,
+        })
+    }
+}
+
+impl ReorderTaskInput {
+    pub fn into_reorder(self) -> Result<TaskReorder, DbError> {
+        if self.id <= 0 {
+            return Err(DbError::new("id must be a positive integer"));
+        }
+        if let Some(after_id) = self.after_id {
+            if after_id <= 0 {
+                return Err(DbError::new("after_id must be a positive integer"));
+            }
+            if after_id == self.id {
+                return Err(DbError::new("after_id cannot be the same as id"));
+            }
+        }
+        Ok(TaskReorder {
+            id: self.id,
+            after_id: self.after_id,
         })
     }
 }

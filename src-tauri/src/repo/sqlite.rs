@@ -3,10 +3,11 @@ use std::sync::Mutex;
 
 use rusqlite::{params, Connection, OptionalExtension};
 
+use crate::common::rank::{self, between};
 use crate::common::time::SQLITE_NOW_LOCAL_ISO;
 use crate::common::{Category, DbError};
 use crate::model::event::{EventDto, EventPatch, NewEvent};
-use crate::model::task::{NewTask, TaskDto, TaskPatch};
+use crate::model::task::{NewTask, TaskDto, TaskPatch, TaskReorder};
 use crate::repo::Database;
 
 /// SQLite-backed [`Database`] implementation.
@@ -41,6 +42,7 @@ fn map_task_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<TaskDto> {
         created_at: row.get(3)?,
         parent_id: row.get(4)?,
         state: row.get(5)?,
+        rank: row.get(6)?,
     })
 }
 
@@ -57,10 +59,14 @@ fn map_event_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<EventDto> {
     })
 }
 
+const TASK_SELECT: &str =
+    "SELECT id, title, description, created_at, parent_id, state, rank FROM tasks";
+
 impl Database for SqliteDatabase {
     fn apply_schema(&self, schema_sql: &str) -> Result<(), DbError> {
         let conn = self.conn.lock()?;
         conn.execute_batch(schema_sql)?;
+        migrate_tasks_rank(&conn)?;
         Ok(())
     }
 
@@ -89,11 +95,10 @@ impl Database for SqliteDatabase {
 
     fn list_tasks(&self) -> Result<Vec<TaskDto>, DbError> {
         let conn = self.conn.lock()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, title, description, created_at, parent_id, state
-             FROM tasks
-             ORDER BY id ASC",
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "{TASK_SELECT}
+             ORDER BY parent_id IS NOT NULL, parent_id ASC, rank ASC, id ASC"
+        ))?;
         let rows = stmt.query_map([], map_task_row)?;
 
         let mut out = Vec::new();
@@ -110,48 +115,53 @@ impl Database for SqliteDatabase {
             ensure_task_exists(&conn, parent_id, "parent_id")?;
         }
 
+        let rank = next_rank_at_end(&conn, task.parent_id)?;
+
         conn.execute(
-            "INSERT INTO tasks (title, description, created_at, parent_id, state)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
+            "INSERT INTO tasks (title, description, created_at, parent_id, state, rank)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![
                 task.title,
                 task.description,
                 task.created_at,
                 task.parent_id,
                 task.state,
+                rank,
             ],
         )?;
 
         let id = conn.last_insert_rowid();
-        Ok(TaskDto {
-            id,
-            title: task.title.clone(),
-            description: task.description.clone(),
-            created_at: task.created_at.clone(),
-            parent_id: task.parent_id,
-            state: task.state,
-        })
+        fetch_task(&conn, id)
     }
 
     fn update_task(&self, patch: &TaskPatch) -> Result<TaskDto, DbError> {
         let conn = self.conn.lock()?;
 
-        ensure_task_exists(&conn, patch.id, "id")?;
+        let existing = fetch_task(&conn, patch.id)?;
 
         if let Some(parent_id) = patch.parent_id {
             ensure_task_exists(&conn, parent_id, "parent_id")?;
         }
 
+        let parent_changed = existing.parent_id != patch.parent_id;
+        let rank = if parent_changed {
+            next_rank_at_end(&conn, patch.parent_id)?
+        } else {
+            existing.rank
+        };
+
         let updated = conn.execute(
             "UPDATE tasks
-             SET title = ?1, description = ?2, created_at = ?3, parent_id = ?4, state = ?5
-             WHERE id = ?6",
+             SET title = ?1, description = ?2, created_at = ?3,
+                 parent_id = ?4, state = ?5, rank = ?6
+             WHERE id = ?7",
             params![
                 patch.title,
                 patch.description,
                 patch.created_at,
                 patch.parent_id,
                 patch.state,
+                rank,
                 patch.id,
             ],
         )?;
@@ -159,13 +169,60 @@ impl Database for SqliteDatabase {
             return Err(DbError::new(format!("task {} not found", patch.id)));
         }
 
-        conn.query_row(
-            "SELECT id, title, description, created_at, parent_id, state
-             FROM tasks WHERE id = ?1",
-            params![patch.id],
-            map_task_row,
-        )
-        .map_err(DbError::from)
+        fetch_task(&conn, patch.id)
+    }
+
+    fn reorder_task(&self, reorder: &TaskReorder) -> Result<TaskDto, DbError> {
+        let conn = self.conn.lock()?;
+        let moving = fetch_task(&conn, reorder.id)?;
+
+        let after_rank = if let Some(after_id) = reorder.after_id {
+            let after = fetch_task(&conn, after_id)?;
+            if after.parent_id != moving.parent_id {
+                return Err(DbError::new(
+                    "after_id must be a sibling (same parent_id)",
+                ));
+            }
+            Some(after.rank)
+        } else {
+            None
+        };
+
+        let before_rank = next_sibling_rank(
+            &conn,
+            moving.parent_id,
+            after_rank.as_deref(),
+            reorder.after_id,
+            moving.id,
+        )?;
+
+        let new_rank = match between(after_rank.as_deref(), before_rank.as_deref()) {
+            Ok(r) => r,
+            Err(_) => {
+                // Ranks too tight (rare): rebalance siblings then retry once.
+                rebalance_siblings(&conn, moving.parent_id)?;
+                let after_rank = if let Some(after_id) = reorder.after_id {
+                    Some(fetch_task(&conn, after_id)?.rank)
+                } else {
+                    None
+                };
+                let before_rank = next_sibling_rank(
+                    &conn,
+                    moving.parent_id,
+                    after_rank.as_deref(),
+                    reorder.after_id,
+                    moving.id,
+                )?;
+                between(after_rank.as_deref(), before_rank.as_deref())?
+            }
+        };
+
+        conn.execute(
+            "UPDATE tasks SET rank = ?1 WHERE id = ?2",
+            params![new_rank, reorder.id],
+        )?;
+
+        fetch_task(&conn, reorder.id)
     }
 
     fn delete_task(&self, id: i64) -> Result<(), DbError> {
@@ -276,6 +333,228 @@ impl Database for SqliteDatabase {
         }
         Ok(())
     }
+}
+
+fn migrate_tasks_rank(conn: &Connection) -> Result<(), DbError> {
+    let mut stmt = conn.prepare("PRAGMA table_info(tasks)")?;
+    let cols: Vec<String> = stmt
+        .query_map([], |row| row.get::<_, String>(1))?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if cols.iter().any(|c| c == "rank") {
+        return Ok(());
+    }
+
+    conn.execute(
+        "ALTER TABLE tasks ADD COLUMN rank TEXT NOT NULL DEFAULT 'V'",
+        [],
+    )?;
+    backfill_ranks(conn)?;
+    Ok(())
+}
+
+fn backfill_ranks(conn: &Connection) -> Result<(), DbError> {
+    // Distinct parent groups (NULL roots + each parent_id).
+    let mut parents: Vec<Option<i64>> = Vec::new();
+    {
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT parent_id FROM tasks ORDER BY parent_id IS NOT NULL, parent_id",
+        )?;
+        let rows = stmt.query_map([], |row| row.get::<_, Option<i64>>(0))?;
+        for row in rows {
+            parents.push(row?);
+        }
+    }
+
+    for parent_id in parents {
+        rebalance_siblings(conn, parent_id)?;
+    }
+    Ok(())
+}
+
+fn rebalance_siblings(conn: &Connection, parent_id: Option<i64>) -> Result<(), DbError> {
+    let ids = sibling_ids_ordered(conn, parent_id, None)?;
+    let mut prev: Option<String> = None;
+    for id in ids {
+        let rank = match &prev {
+            None => between(None, None)?,
+            Some(p) => rank::after(p)?,
+        };
+        conn.execute(
+            "UPDATE tasks SET rank = ?1 WHERE id = ?2",
+            params![rank, id],
+        )?;
+        prev = Some(rank);
+    }
+    Ok(())
+}
+
+fn sibling_ids_ordered(
+    conn: &Connection,
+    parent_id: Option<i64>,
+    exclude_id: Option<i64>,
+) -> Result<Vec<i64>, DbError> {
+    let mut out = Vec::new();
+    match parent_id {
+        Some(pid) => {
+            let mut stmt = conn.prepare(
+                "SELECT id FROM tasks
+                 WHERE parent_id = ?1
+                 ORDER BY rank ASC, id ASC",
+            )?;
+            let rows = stmt.query_map(params![pid], |row| row.get::<_, i64>(0))?;
+            for row in rows {
+                let id = row?;
+                if exclude_id != Some(id) {
+                    out.push(id);
+                }
+            }
+        }
+        None => {
+            let mut stmt = conn.prepare(
+                "SELECT id FROM tasks
+                 WHERE parent_id IS NULL
+                 ORDER BY rank ASC, id ASC",
+            )?;
+            let rows = stmt.query_map([], |row| row.get::<_, i64>(0))?;
+            for row in rows {
+                let id = row?;
+                if exclude_id != Some(id) {
+                    out.push(id);
+                }
+            }
+        }
+    }
+    Ok(out)
+}
+
+fn next_rank_at_end(conn: &Connection, parent_id: Option<i64>) -> Result<String, DbError> {
+    let max = max_sibling_rank(conn, parent_id)?;
+    match max {
+        None => between(None, None),
+        Some(prev) => rank::after(&prev),
+    }
+}
+
+fn max_sibling_rank(
+    conn: &Connection,
+    parent_id: Option<i64>,
+) -> Result<Option<String>, DbError> {
+    let result = match parent_id {
+        Some(pid) => conn
+            .query_row(
+                "SELECT rank FROM tasks
+                 WHERE parent_id = ?1
+                 ORDER BY rank DESC, id DESC
+                 LIMIT 1",
+                params![pid],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?,
+        None => conn
+            .query_row(
+                "SELECT rank FROM tasks
+                 WHERE parent_id IS NULL
+                 ORDER BY rank DESC, id DESC
+                 LIMIT 1",
+                [],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?,
+    };
+    Ok(result)
+}
+
+/// Rank of the sibling that should sit immediately below the insertion point.
+fn next_sibling_rank(
+    conn: &Connection,
+    parent_id: Option<i64>,
+    after_rank: Option<&str>,
+    after_id: Option<i64>,
+    exclude_id: i64,
+) -> Result<Option<String>, DbError> {
+    let sql = match (parent_id, after_rank) {
+        (Some(_), Some(_)) => {
+            "SELECT rank FROM tasks
+             WHERE parent_id = ?1
+               AND id != ?2
+               AND (rank > ?3 OR (rank = ?3 AND id > ?4))
+             ORDER BY rank ASC, id ASC
+             LIMIT 1"
+        }
+        (Some(_), None) => {
+            "SELECT rank FROM tasks
+             WHERE parent_id = ?1
+               AND id != ?2
+             ORDER BY rank ASC, id ASC
+             LIMIT 1"
+        }
+        (None, Some(_)) => {
+            "SELECT rank FROM tasks
+             WHERE parent_id IS NULL
+               AND id != ?1
+               AND (rank > ?2 OR (rank = ?2 AND id > ?3))
+             ORDER BY rank ASC, id ASC
+             LIMIT 1"
+        }
+        (None, None) => {
+            "SELECT rank FROM tasks
+             WHERE parent_id IS NULL
+               AND id != ?1
+             ORDER BY rank ASC, id ASC
+             LIMIT 1"
+        }
+    };
+
+    let result = match (parent_id, after_rank, after_id) {
+        (Some(pid), Some(ar), Some(aid)) => conn
+            .query_row(sql, params![pid, exclude_id, ar, aid], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?,
+        (Some(pid), None, _) => conn
+            .query_row(sql, params![pid, exclude_id], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?,
+        (None, Some(ar), Some(aid)) => conn
+            .query_row(sql, params![exclude_id, ar, aid], |row| {
+                row.get::<_, String>(0)
+            })
+            .optional()?,
+        (None, None, _) => conn
+            .query_row(sql, params![exclude_id], |row| row.get::<_, String>(0))
+            .optional()?,
+        // after_rank without after_id shouldn't happen
+        (Some(pid), Some(ar), None) => conn
+            .query_row(
+                "SELECT rank FROM tasks
+                 WHERE parent_id = ?1 AND id != ?2 AND rank > ?3
+                 ORDER BY rank ASC, id ASC LIMIT 1",
+                params![pid, exclude_id, ar],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?,
+        (None, Some(ar), None) => conn
+            .query_row(
+                "SELECT rank FROM tasks
+                 WHERE parent_id IS NULL AND id != ?1 AND rank > ?2
+                 ORDER BY rank ASC, id ASC LIMIT 1",
+                params![exclude_id, ar],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?,
+    };
+    Ok(result)
+}
+
+fn fetch_task(conn: &Connection, id: i64) -> Result<TaskDto, DbError> {
+    conn.query_row(
+        &format!("{TASK_SELECT} WHERE id = ?1"),
+        params![id],
+        map_task_row,
+    )
+    .map_err(|_| DbError::new(format!("task {id} not found")))
 }
 
 fn ensure_task_exists(

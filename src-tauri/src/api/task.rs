@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::common::AppDatabase;
-use crate::model::task::{CreateTaskInput, TaskDto, UpdateTaskInput};
+use crate::model::task::{CreateTaskInput, ReorderTaskInput, TaskDto, UpdateTaskInput};
 
 #[tauri::command]
 pub fn list_tasks(db: State<'_, AppDatabase>) -> Result<Vec<TaskDto>, String> {
@@ -26,6 +26,17 @@ pub fn update_task(
 ) -> Result<TaskDto, String> {
     let patch = input.into_patch().map_err(|e| e.to_string())?;
     db.inner.update_task(&patch).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn reorder_task(
+    db: State<'_, AppDatabase>,
+    input: ReorderTaskInput,
+) -> Result<TaskDto, String> {
+    let reorder = input.into_reorder().map_err(|e| e.to_string())?;
+    db.inner
+        .reorder_task(&reorder)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

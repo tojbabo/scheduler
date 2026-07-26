@@ -11,6 +11,9 @@
 --   1 = 진행 중
 --   2 = 중단
 --   3 = 완료
+--
+-- task.rank (TEXT): fractional order among siblings (same parent_id).
+--   Lexicographic ascending = display order (smaller = higher / top).
 
 PRAGMA foreign_keys = ON;
 
@@ -50,12 +53,14 @@ CREATE TABLE IF NOT EXISTS tasks (
     created_at TEXT NOT NULL,
     parent_id INTEGER,
     state INTEGER NOT NULL DEFAULT 0,
+    rank TEXT NOT NULL DEFAULT 'V',
     FOREIGN KEY (parent_id) REFERENCES tasks (id) ON DELETE CASCADE,
     CHECK (state IN (0, 1, 2, 3))
 );
 
 CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks (parent_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_state ON tasks (state);
+CREATE INDEX IF NOT EXISTS idx_tasks_parent_rank ON tasks (parent_id, rank);
 
-INSERT INTO schema_meta (key, value) VALUES ('version', '3')
+INSERT INTO schema_meta (key, value) VALUES ('version', '4')
 ON CONFLICT (key) DO UPDATE SET value = excluded.value;
