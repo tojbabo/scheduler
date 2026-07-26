@@ -341,15 +341,19 @@ fn migrate_tasks_rank(conn: &Connection) -> Result<(), DbError> {
         .query_map([], |row| row.get::<_, String>(1))?
         .collect::<Result<Vec<_>, _>>()?;
 
-    if cols.iter().any(|c| c == "rank") {
-        return Ok(());
+    if !cols.iter().any(|c| c == "rank") {
+        conn.execute(
+            "ALTER TABLE tasks ADD COLUMN rank TEXT NOT NULL DEFAULT 'V'",
+            [],
+        )?;
+        backfill_ranks(conn)?;
     }
 
+    // Index must run after `rank` exists (older DBs only get the column via ALTER).
     conn.execute(
-        "ALTER TABLE tasks ADD COLUMN rank TEXT NOT NULL DEFAULT 'V'",
+        "CREATE INDEX IF NOT EXISTS idx_tasks_parent_rank ON tasks (parent_id, rank)",
         [],
     )?;
-    backfill_ranks(conn)?;
     Ok(())
 }
 

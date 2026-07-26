@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks (parent_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_state ON tasks (state);
-CREATE INDEX IF NOT EXISTS idx_tasks_parent_rank ON tasks (parent_id, rank);
+-- idx_tasks_parent_rank is created in migrate_tasks_rank after `rank` exists
+-- (CREATE TABLE IF NOT EXISTS won't add `rank` to older DBs).
 
 INSERT INTO schema_meta (key, value) VALUES ('version', '4')
 ON CONFLICT (key) DO UPDATE SET value = excluded.value;
