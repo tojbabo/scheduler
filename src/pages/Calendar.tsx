@@ -5,6 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
+  deleteEvent,
   listEvents,
   updateEventFromUiDraft,
   type Event,
@@ -250,6 +251,25 @@ export function Calendar() {
       });
   }
 
+  function handleEditDelete() {
+    if (editingEvent == null) return;
+    const id = editingEvent.id;
+    setEditError(null);
+
+    void deleteEvent(id)
+      .then(() => {
+        console.log("[Calendar] event deleted", id);
+        closeEditDialog();
+        refreshEvents();
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : "일정을 삭제하지 못했습니다.";
+        console.error("[Calendar] deleteEvent failed", err);
+        setEditError(message);
+      });
+  }
+
   function handleEventTitlePointerDown(
     e: ReactPointerEvent<HTMLLIElement>,
   ) {
@@ -399,6 +419,7 @@ export function Calendar() {
         initialEvent={editInitial ?? undefined}
         onClose={closeEditDialog}
         onSubmit={handleEditSubmit}
+        onDelete={handleEditDelete}
       />
     </PageLayout>
   );

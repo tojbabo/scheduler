@@ -653,6 +653,16 @@ button {
   background: var(--hover-tint);
 }
 
+.btn--danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: transparent;
+}
+
+.btn--danger:hover {
+  background: color-mix(in srgb, var(--danger-soft) 70%, var(--danger));
+}
+
 /* —— Dialog (task create) —— */
 .dialog-root {
   position: fixed;
@@ -728,6 +738,10 @@ button {
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.35rem;
+}
+
+.dialog__actions .btn--danger {
+  margin-right: auto;
 }
 
 .field-row {

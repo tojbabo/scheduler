@@ -35,6 +35,8 @@ type EventCreateDialogProps = {
   initialEvent?: EventCreateInitial;
   /** Parent branches create vs update; draft shape is the same. */
   onSubmit?: (draft: EventCreateDraft) => void;
+  /** Edit mode only: delete current event (parent calls API). */
+  onDelete?: () => void;
 };
 
 /** Date input (`YYYY-MM-DD`) → API local midnight (`YYYY-MM-DDT00:00`). */
@@ -53,6 +55,7 @@ export function EventCreateDialog({
   initialEndsAt,
   initialEvent,
   onSubmit,
+  onDelete,
 }: EventCreateDialogProps) {
   const titleId = useId();
   const { categories, loading: categoriesLoading } = useCategories();
@@ -201,6 +204,15 @@ export function EventCreateDialog({
           </label>
 
           <div className="dialog__actions">
+            {mode === "edit" && onDelete != null ? (
+              <button
+                type="button"
+                className="btn btn--danger"
+                onClick={onDelete}
+              >
+                삭제
+              </button>
+            ) : null}
             <button type="button" className="btn btn--ghost" onClick={onClose}>
               취소
             </button>
