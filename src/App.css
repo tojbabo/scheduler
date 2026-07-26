@@ -398,12 +398,68 @@ button {
   background: var(--bg-elevated);
 }
 
+.home-panel--clickable {
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.home-panel--clickable:hover {
+  border-color: var(--accent-soft);
+  background: color-mix(in srgb, var(--bg-elevated) 88%, var(--accent-soft));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.home-panel--clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.home-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
 .home-panel__title {
-  margin: 0 0 0.85rem;
+  margin: 0;
   font-size: 0.95rem;
   font-weight: 650;
   letter-spacing: -0.01em;
   color: var(--text);
+}
+
+.home-panel__add {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.home-panel__add:hover {
+  background: var(--accent-hover);
+}
+
+.home-panel__add:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .home-panel__empty {

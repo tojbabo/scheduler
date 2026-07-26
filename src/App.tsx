@@ -20,7 +20,9 @@ function App() {
           <div className="shell__drag" data-tauri-drag-region aria-hidden="true" />
           <WindowControls />
           <main className="shell__content">
-            {activeMenu === "home" && <Home />}
+            {activeMenu === "home" && (
+              <Home onNavigate={(id) => setActiveMenu(id)} />
+            )}
             {activeMenu === "plan" && <Schedule />}
             {activeMenu === "calendar" && <Calendar />}
             {activeMenu === "settings" && <Settings />}

@@ -42,7 +42,12 @@ function formatDayMeta(startsAt: string | null, endsAt: string | null): string |
   return dLabel;
 }
 
-export function EventList() {
+type EventListProps = {
+  /** Bump from parent to reload (e.g. after create). */
+  refreshKey?: number;
+};
+
+export function EventList({ refreshKey = 0 }: EventListProps) {
   const [load, setLoad] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {
@@ -64,7 +69,7 @@ export function EventList() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   if (load.status === "loading") {
     return <p className="page__status">불러오는 중…</p>;
