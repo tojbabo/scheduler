@@ -36,7 +36,11 @@ export function SideNav({ activeId, onSelect }: SideNavProps) {
               <button
                 type="button"
                 className={`side-nav__item${active ? " is-active" : ""}`}
-                onClick={() => onSelect(item.id)}
+                onClick={(event) => {
+                  onSelect(item.id);
+                  // Drop focus so :focus-within does not keep the nav expanded after mouse leave.
+                  event.currentTarget.blur();
+                }}
                 aria-current={active ? "page" : undefined}
                 title={item.label}
               >
