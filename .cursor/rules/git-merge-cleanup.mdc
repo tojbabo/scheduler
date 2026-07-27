@@ -1,0 +1,16 @@
+---
+description: After merging into main, delete the source branch locally and on remote
+alwaysApply: true
+---
+
+# Merge to main → delete branch
+
+When the user asks to merge a branch into `main` (or after completing such a merge):
+
+1. Push the feature/hotfix branch if needed, then merge into `main` and push `main`.
+2. **Always delete the merged branch** both locally and on the remote:
+   - `git branch -d <branch>` (or `-D` if already merged)
+   - `git push origin --delete <branch>`
+3. Leave only `main` checked out and in sync with `origin/main`, unless the user asks otherwise.
+4. Do **not** delete `main` itself.
+5. If other stale non-`main` branches remain and the user asked to clean up after merge, delete those too (local + remote).
