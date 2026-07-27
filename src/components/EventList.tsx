@@ -33,7 +33,7 @@ function formatDayMeta(startsAt: string | null, endsAt: string | null): string |
   if (!anchorKey) return null;
 
   const n = dayDiff(todayKey(), anchorKey);
-  const dLabel = n < 0 ? `D${n}` : `D+${n}`;
+  const dLabel = n < 0 ? `D+${-n}` : `D-${n}`;
 
   if (startKey && endKey && startKey !== endKey) {
     return `${dLabel} ~ ${dayDiff(startKey, endKey)}`;

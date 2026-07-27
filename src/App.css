@@ -417,11 +417,6 @@ button {
 
 .home-panel--clickable {
   cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.home-panel--clickable:hover {
-  background: var(--hover-tint);
 }
 
 .home-panel--clickable:focus-visible {
@@ -580,6 +575,11 @@ button {
   background: var(--hover-tint);
 }
 
+.task-list--reordering {
+  user-select: none;
+  cursor: grabbing;
+}
+
 .task-list__item--dragging {
   opacity: 0.45;
 }
@@ -605,6 +605,8 @@ button {
   color: var(--muted);
   cursor: grab;
   touch-action: none;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 }
 
 .task-list__grip:hover,
@@ -614,7 +616,8 @@ button {
   outline: none;
 }
 
-.task-list__grip:active {
+.task-list__grip:active,
+.task-list--reordering .task-list__grip {
   cursor: grabbing;
 }
 

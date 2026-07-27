@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {
   deleteTask,
   listTasks,
+  reorderTask,
   updateTaskFromUiDraft,
   updateTaskState,
   type Task,
@@ -42,6 +43,10 @@ function taskToInitial(task: Task): TaskCreateInitial {
   };
 }
 
+function sameParent(a: Task, b: Task): boolean {
+  return a.parentId === b.parentId;
+}
+
 function reorderTasks(tasks: Task[], fromIndex: number, toIndex: number): Task[] {
   if (
     fromIndex === toIndex ||
@@ -56,6 +61,24 @@ function reorderTasks(tasks: Task[], fromIndex: number, toIndex: number): Task[]
   const [moved] = next.splice(fromIndex, 1);
   next.splice(toIndex, 0, moved);
   return next;
+}
+
+/** Previous sibling in the list with the same parent → `afterId` for reorder API. */
+function afterIdAt(tasks: Task[], index: number): number | null {
+  const task = tasks[index];
+  if (task == null) return null;
+  for (let i = index - 1; i >= 0; i -= 1) {
+    if (sameParent(tasks[i], task)) return tasks[i].id;
+  }
+  return null;
+}
+
+function indexFromPoint(clientX: number, clientY: number): number | null {
+  const el = document.elementFromPoint(clientX, clientY);
+  const row = el?.closest("[data-task-index]");
+  if (!(row instanceof HTMLElement)) return null;
+  const index = Number(row.dataset.taskIndex);
+  return Number.isInteger(index) ? index : null;
 }
 
 function DragHandle() {
@@ -83,9 +106,20 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
     null,
   );
   const [editError, setEditError] = useState<string | null>(null);
+  const [reorderError, setReorderError] = useState<string | null>(null);
+  const [reorderingId, setReorderingId] = useState<number | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragFromIndexRef = useRef<number | null>(null);
+  const dragOverIndexRef = useRef<number | null>(null);
+  const tasksRef = useRef<Task[]>([]);
+  const suppressClickRef = useRef(false);
+
+  if (load.status === "ready") {
+    tasksRef.current = load.tasks;
+  }
+
+  const isDragging = draggingIndex != null;
 
   useEffect(() => {
     let cancelled = false;
@@ -107,6 +141,22 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
       cancelled = true;
     };
   }, [refreshKey, localRefreshKey]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        dragFromIndexRef.current = null;
+        dragOverIndexRef.current = null;
+        setDraggingIndex(null);
+        setDragOverIndex(null);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isDragging]);
 
   function loadTasks() {
     setLocalRefreshKey((key) => key + 1);
@@ -204,53 +254,104 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
 
   function clearDragState() {
     dragFromIndexRef.current = null;
+    dragOverIndexRef.current = null;
     setDraggingIndex(null);
     setDragOverIndex(null);
   }
 
-  function handleDragStart(index: number, event: DragEvent) {
-    dragFromIndexRef.current = index;
-    setDraggingIndex(index);
-    setDragOverIndex(index);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", String(index));
+  function commitReorder(fromIndex: number, toIndex: number) {
+    const previousTasks = tasksRef.current;
+    const moving = previousTasks[fromIndex];
+    const target = previousTasks[toIndex];
+    if (moving == null || target == null || !sameParent(moving, target)) return;
+    if (reorderingId !== null) return;
+
+    const nextTasks = reorderTasks(previousTasks, fromIndex, toIndex);
+    const afterId = afterIdAt(nextTasks, toIndex);
+
+    setReorderError(null);
+    setReorderingId(moving.id);
+    setLoad({ status: "ready", tasks: nextTasks });
+
+    void reorderTask({ id: moving.id, afterId })
+      .then((updated) => {
+        setLoad((current) => {
+          if (current.status !== "ready") return current;
+          return {
+            status: "ready",
+            tasks: current.tasks.map((task) =>
+              task.id === updated.id ? updated : task,
+            ),
+          };
+        });
+      })
+      .catch((err: unknown) => {
+        console.error("[PlanReorder] failed", err);
+        const message =
+          err instanceof Error ? err.message : "계획 순서를 변경하지 못했습니다.";
+        setReorderError(message);
+        setLoad({ status: "ready", tasks: previousTasks });
+      })
+      .finally(() => {
+        setReorderingId(null);
+      });
   }
 
-  function handleDragOver(index: number, event: DragEvent) {
-    if (dragFromIndexRef.current == null) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    if (dragOverIndex !== index) setDragOverIndex(index);
-  }
-
-  function handleDrop(toIndex: number, event: DragEvent) {
+  function handleGripPointerDown(
+    index: number,
+    event: PointerEvent<HTMLButtonElement>,
+  ) {
+    if (event.button !== 0 || reorderingId !== null) return;
     event.preventDefault();
     event.stopPropagation();
-
-    const fromIndex = dragFromIndexRef.current;
-    clearDragState();
-
-    if (fromIndex == null || fromIndex === toIndex) return;
-    if (load.status !== "ready") return;
-
-    const moved = load.tasks[fromIndex];
-    if (moved == null) return;
-
-    console.log("[PlanReorder]", {
-      fromIndex,
-      toIndex,
-      id: moved.id,
-      title: moved.title,
-    });
-
-    setLoad({
-      status: "ready",
-      tasks: reorderTasks(load.tasks, fromIndex, toIndex),
-    });
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragFromIndexRef.current = index;
+    dragOverIndexRef.current = index;
+    suppressClickRef.current = false;
+    setDraggingIndex(index);
+    setDragOverIndex(index);
   }
 
-  function handleDragEnd() {
+  function handleGripPointerMove(event: PointerEvent<HTMLButtonElement>) {
+    const fromIndex = dragFromIndexRef.current;
+    if (fromIndex == null) return;
+
+    const over = indexFromPoint(event.clientX, event.clientY);
+    if (over == null) return;
+
+    const tasks = tasksRef.current;
+    const moving = tasks[fromIndex];
+    const target = tasks[over];
+    if (moving == null || target == null || !sameParent(moving, target)) return;
+
+    if (dragOverIndexRef.current !== over) {
+      dragOverIndexRef.current = over;
+      setDragOverIndex(over);
+      if (over !== fromIndex) suppressClickRef.current = true;
+    }
+  }
+
+  function handleGripPointerUp(event: PointerEvent<HTMLButtonElement>) {
+    if (dragFromIndexRef.current == null) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    const fromIndex = dragFromIndexRef.current;
+    const toIndex = dragOverIndexRef.current;
     clearDragState();
+
+    if (fromIndex == null || toIndex == null || fromIndex === toIndex) return;
+    commitReorder(fromIndex, toIndex);
+  }
+
+  function handleItemClick(task: Task) {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    openEditDialog(task);
   }
 
   return (
@@ -283,12 +384,22 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
         </p>
       ) : null}
 
+      {interactive && reorderError ? (
+        <p className="page__status page__status--error" role="alert">
+          {reorderError}
+        </p>
+      ) : null}
+
       {load.status === "ready" && load.tasks.length === 0 ? (
         <p className="page__status">등록된 계획이 없습니다.</p>
       ) : null}
 
       {load.status === "ready" && load.tasks.length > 0 ? (
-        <ul className="task-list">
+        <ul
+          className={
+            isDragging ? "task-list task-list--reordering" : "task-list"
+          }
+        >
           {load.tasks.map((task, index) => {
             const itemClass = [
               "task-list__item",
@@ -305,12 +416,9 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
               <li
                 key={task.id}
                 className={itemClass}
-                onClick={interactive ? () => openEditDialog(task) : undefined}
-                onDragOver={
-                  interactive ? (event) => handleDragOver(index, event) : undefined
-                }
-                onDrop={
-                  interactive ? (event) => handleDrop(index, event) : undefined
+                data-task-index={index}
+                onClick={
+                  interactive ? () => handleItemClick(task) : undefined
                 }
               >
                 {interactive ? (
@@ -319,17 +427,14 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
                     className="task-list__grip"
                     aria-label={`${task.title} 순서 변경`}
                     title="드래그하여 순서 변경"
-                    draggable
+                    disabled={reorderingId !== null}
                     onClick={(event) => event.stopPropagation()}
-                    onDragStart={(event) => {
-                      event.stopPropagation();
-                      const row = event.currentTarget.closest("li");
-                      if (row instanceof HTMLElement) {
-                        event.dataTransfer.setDragImage(row, 24, 24);
-                      }
-                      handleDragStart(index, event);
-                    }}
-                    onDragEnd={handleDragEnd}
+                    onPointerDown={(event) =>
+                      handleGripPointerDown(index, event)
+                    }
+                    onPointerMove={handleGripPointerMove}
+                    onPointerUp={handleGripPointerUp}
+                    onPointerCancel={handleGripPointerUp}
                   >
                     <DragHandle />
                   </button>
