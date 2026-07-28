@@ -87,17 +87,13 @@ fn normalize_description(description: Option<String>) -> Option<String> {
 
 fn validate_category_id(category_id: Option<i64>) -> Result<(), DbError> {
     if let Some(id) = category_id {
-        Category::try_from(id).map_err(|_| {
-            DbError::new(format!("category_id {id} is not a known category"))
-        })?;
+        Category::try_from(id)
+            .map_err(|_| DbError::new(format!("category_id {id} is not a known category")))?;
     }
     Ok(())
 }
 
-fn validate_range(
-    starts_at: &Option<String>,
-    ends_at: &Option<String>,
-) -> Result<(), DbError> {
+fn validate_range(starts_at: &Option<String>, ends_at: &Option<String>) -> Result<(), DbError> {
     if let (Some(start), Some(end)) = (starts_at, ends_at) {
         if end < start {
             return Err(DbError::new("ends_at must be >= starts_at"));

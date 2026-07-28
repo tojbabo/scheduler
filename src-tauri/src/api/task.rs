@@ -9,21 +9,13 @@ pub fn list_tasks(db: State<'_, AppDatabase>) -> Result<Vec<TaskDto>, String> {
 }
 
 #[tauri::command]
-pub fn create_task(
-    db: State<'_, AppDatabase>,
-    input: CreateTaskInput,
-) -> Result<TaskDto, String> {
+pub fn create_task(db: State<'_, AppDatabase>, input: CreateTaskInput) -> Result<TaskDto, String> {
     let new_task = input.into_new_task().map_err(|e| e.to_string())?;
-    db.inner
-        .create_task(&new_task)
-        .map_err(|e| e.to_string())
+    db.inner.create_task(&new_task).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn update_task(
-    db: State<'_, AppDatabase>,
-    input: UpdateTaskInput,
-) -> Result<TaskDto, String> {
+pub fn update_task(db: State<'_, AppDatabase>, input: UpdateTaskInput) -> Result<TaskDto, String> {
     let patch = input.into_patch().map_err(|e| e.to_string())?;
     db.inner.update_task(&patch).map_err(|e| e.to_string())
 }
@@ -34,9 +26,7 @@ pub fn reorder_task(
     input: ReorderTaskInput,
 ) -> Result<TaskDto, String> {
     let reorder = input.into_reorder().map_err(|e| e.to_string())?;
-    db.inner
-        .reorder_task(&reorder)
-        .map_err(|e| e.to_string())
+    db.inner.reorder_task(&reorder).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

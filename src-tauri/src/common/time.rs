@@ -23,9 +23,7 @@ pub fn normalize_iso_timestamp(raw: &str) -> Result<String, DbError> {
 }
 
 /// Optional timestamp: empty/None → None, otherwise normalized.
-pub fn normalize_optional_iso_timestamp(
-    raw: Option<&str>,
-) -> Result<Option<String>, DbError> {
+pub fn normalize_optional_iso_timestamp(raw: Option<&str>) -> Result<Option<String>, DbError> {
     match raw {
         None => Ok(None),
         Some(s) if s.trim().is_empty() => Ok(None),
@@ -34,5 +32,4 @@ pub fn normalize_optional_iso_timestamp(
 }
 
 /// SQLite expression: local now as `YYYY-MM-DDTHH:MM:SS`.
-pub const SQLITE_NOW_LOCAL_ISO: &str =
-    "strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime')";
+pub const SQLITE_NOW_LOCAL_ISO: &str = "strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime')";

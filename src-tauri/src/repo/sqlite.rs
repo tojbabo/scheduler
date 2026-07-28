@@ -179,9 +179,7 @@ impl Database for SqliteDatabase {
         let after_rank = if let Some(after_id) = reorder.after_id {
             let after = fetch_task(&conn, after_id)?;
             if after.parent_id != moving.parent_id {
-                return Err(DbError::new(
-                    "after_id must be a sibling (same parent_id)",
-                ));
+                return Err(DbError::new("after_id must be a sibling (same parent_id)"));
             }
             Some(after.rank)
         } else {
@@ -440,10 +438,7 @@ fn next_rank_at_end(conn: &Connection, parent_id: Option<i64>) -> Result<String,
     }
 }
 
-fn max_sibling_rank(
-    conn: &Connection,
-    parent_id: Option<i64>,
-) -> Result<Option<String>, DbError> {
+fn max_sibling_rank(conn: &Connection, parent_id: Option<i64>) -> Result<Option<String>, DbError> {
     let result = match parent_id {
         Some(pid) => conn
             .query_row(
@@ -517,9 +512,7 @@ fn next_sibling_rank(
             })
             .optional()?,
         (Some(pid), None, _) => conn
-            .query_row(sql, params![pid, exclude_id], |row| {
-                row.get::<_, String>(0)
-            })
+            .query_row(sql, params![pid, exclude_id], |row| row.get::<_, String>(0))
             .optional()?,
         (None, Some(ar), Some(aid)) => conn
             .query_row(sql, params![exclude_id, ar, aid], |row| {
@@ -561,17 +554,11 @@ fn fetch_task(conn: &Connection, id: i64) -> Result<TaskDto, DbError> {
     .map_err(|_| DbError::new(format!("task {id} not found")))
 }
 
-fn ensure_task_exists(
-    conn: &Connection,
-    id: i64,
-    label: &str,
-) -> Result<(), DbError> {
+fn ensure_task_exists(conn: &Connection, id: i64, label: &str) -> Result<(), DbError> {
     let exists: Option<i64> = conn
-        .query_row(
-            "SELECT id FROM tasks WHERE id = ?1",
-            params![id],
-            |row| row.get(0),
-        )
+        .query_row("SELECT id FROM tasks WHERE id = ?1", params![id], |row| {
+            row.get(0)
+        })
         .optional()?;
     if exists.is_none() {
         return Err(DbError::new(format!("{label} {id} does not exist")));

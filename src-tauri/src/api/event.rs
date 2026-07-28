@@ -14,9 +14,7 @@ pub fn create_event(
     input: CreateEventInput,
 ) -> Result<EventDto, String> {
     let new_event = input.into_new_event().map_err(|e| e.to_string())?;
-    db.inner
-        .create_event(&new_event)
-        .map_err(|e| e.to_string())
+    db.inner.create_event(&new_event).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

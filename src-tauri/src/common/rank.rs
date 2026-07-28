@@ -18,9 +18,7 @@ pub fn between(before: Option<&str>, after: Option<&str>) -> Result<String, DbEr
     }
     if let (Some(b), Some(a)) = (before, after) {
         if b >= a {
-            return Err(DbError::new(format!(
-                "invalid rank bounds: {b} >= {a}"
-            )));
+            return Err(DbError::new(format!("invalid rank bounds: {b} >= {a}")));
         }
     }
     Ok(generate_key_between(before, after))

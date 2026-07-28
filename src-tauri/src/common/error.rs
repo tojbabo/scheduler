@@ -34,7 +34,9 @@ impl From<std::io::Error> for DbError {
 }
 
 impl From<std::sync::PoisonError<std::sync::MutexGuard<'_, rusqlite::Connection>>> for DbError {
-    fn from(value: std::sync::PoisonError<std::sync::MutexGuard<'_, rusqlite::Connection>>) -> Self {
+    fn from(
+        value: std::sync::PoisonError<std::sync::MutexGuard<'_, rusqlite::Connection>>,
+    ) -> Self {
         Self::Message(value.to_string())
     }
 }
