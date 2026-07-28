@@ -180,9 +180,18 @@ export function PageLayout({
         </div>
 
         <div className="page-head__actions">
-          <time className="page-head__date" dateTime={todayIso}>
-            {todayLabel}
-          </time>
+          <div className="page-head__meta">
+            <time className="page-head__date" dateTime={todayIso}>
+              {todayLabel}
+            </time>
+            <ul className="page-head__weather" aria-label="이번 주 날씨 (임시: 맑음)">
+              {Array.from({ length: 7 }, (_, i) => (
+                <li key={i} className="page-head__weather-day" title="맑음">
+                  <SunIcon />
+                </li>
+              ))}
+            </ul>
+          </div>
           {showCreate ? (
             <button
               type="button"
@@ -223,5 +232,24 @@ export function PageLayout({
         />
       ) : null}
     </section>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg
+      className="page-head__weather-icon"
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="3.5" />
+      <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M5.2 18.8l1.6-1.6M17.2 6.8l1.6-1.6" />
+    </svg>
   );
 }

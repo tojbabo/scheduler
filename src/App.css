@@ -320,12 +320,39 @@ button {
   -webkit-app-region: no-drag;
 }
 
+.page-head__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
 .page-head__date {
   margin: 0;
   font-size: 0.82rem;
   color: var(--muted);
   letter-spacing: -0.01em;
   white-space: nowrap;
+}
+
+.page-head__weather {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-head__weather-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.page-head__weather-icon {
+  display: block;
 }
 
 .page-head__actions .btn {
