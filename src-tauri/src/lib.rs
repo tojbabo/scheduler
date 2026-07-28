@@ -23,6 +23,13 @@ pub fn run() {
         .setup(|app| {
             let database = init_database(app.handle())?;
             app.manage(database);
+
+            // Release builds open maximized; keep a normal window size while developing.
+            #[cfg(not(debug_assertions))]
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.maximize();
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
