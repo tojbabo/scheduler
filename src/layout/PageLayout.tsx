@@ -40,6 +40,8 @@ type PageLayoutProps = {
 };
 
 /** Common page chrome: head (eyebrow / title / copy) + page-specific body. */
+const WEEKDAY_ABBR = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
+
 export function PageLayout({
   eyebrow,
   title,
@@ -71,6 +73,11 @@ export function PageLayout({
     String(today.getMonth() + 1).padStart(2, "0"),
     String(today.getDate()).padStart(2, "0"),
   ].join("-");
+  const WEEKDAY_LABELS = Array.from({ length: 7 }, (_, offset) => {
+    const day = new Date(today);
+    day.setDate(today.getDate() + offset);
+    return { offset, abbr: WEEKDAY_ABBR[day.getDay()] };
+  });
 
   const showCreate = createLabel != null && createLabel.length > 0;
   const requestNonce = eventDateRequest?.nonce;
@@ -185,9 +192,14 @@ export function PageLayout({
               {todayLabel}
             </time>
             <ul className="page-head__weather" aria-label="이번 주 날씨 (임시: 맑음)">
-              {Array.from({ length: 7 }, (_, i) => (
-                <li key={i} className="page-head__weather-day" title="맑음">
+              {WEEKDAY_LABELS.map((label, i) => (
+                <li
+                  key={label.offset}
+                  className={`page-head__weather-day${i === 0 ? " page-head__weather-day--today" : ""}`}
+                  title={`${label.abbr} · 맑음`}
+                >
                   <SunIcon />
+                  <span className="page-head__weather-abbr">{label.abbr}</span>
                 </li>
               ))}
             </ul>

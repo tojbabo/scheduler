@@ -337,8 +337,8 @@ button {
 
 .page-head__weather {
   display: flex;
-  align-items: center;
-  gap: 0.2rem;
+  align-items: flex-start;
+  gap: 0.35rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -346,13 +346,27 @@ button {
 
 .page-head__weather-day {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 0.15rem;
+  min-width: 1.6rem;
   color: var(--accent);
 }
 
 .page-head__weather-icon {
   display: block;
+}
+
+.page-head__weather-abbr {
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.page-head__weather-day--today .page-head__weather-abbr {
+  color: var(--danger);
 }
 
 .page-head__actions .btn {
