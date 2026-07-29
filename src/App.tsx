@@ -6,6 +6,7 @@ import { Schedule } from "./pages/Schedule";
 import { Calendar } from "./pages/Calendar";
 import { Settings } from "./pages/Settings";
 import { CategoriesProvider } from "./state/CategoriesContext";
+import { WeatherProvider } from "./state/WeatherContext";
 import "./App.css";
 
 function App() {
@@ -13,22 +14,24 @@ function App() {
 
   return (
     <CategoriesProvider>
-      <div className="shell">
-        <SideNav activeId={activeMenu} onSelect={setActiveMenu} />
+      <WeatherProvider>
+        <div className="shell">
+          <SideNav activeId={activeMenu} onSelect={setActiveMenu} />
 
-        <div className="shell__main">
-          <div className="shell__drag" data-tauri-drag-region aria-hidden="true" />
-          <WindowControls />
-          <main className="shell__content">
-            {activeMenu === "home" && (
-              <Home onNavigate={(id) => setActiveMenu(id)} />
-            )}
-            {activeMenu === "plan" && <Schedule />}
-            {activeMenu === "calendar" && <Calendar />}
-            {activeMenu === "settings" && <Settings />}
-          </main>
+          <div className="shell__main">
+            <div className="shell__drag" data-tauri-drag-region aria-hidden="true" />
+            <WindowControls />
+            <main className="shell__content">
+              {activeMenu === "home" && (
+                <Home onNavigate={(id) => setActiveMenu(id)} />
+              )}
+              {activeMenu === "plan" && <Schedule />}
+              {activeMenu === "calendar" && <Calendar />}
+              {activeMenu === "settings" && <Settings />}
+            </main>
+          </div>
         </div>
-      </div>
+      </WeatherProvider>
     </CategoriesProvider>
   );
 }

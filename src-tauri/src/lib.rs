@@ -4,7 +4,8 @@ mod model;
 mod repo;
 
 use api::{
-    create_event, create_task, delete_event, delete_task, list_categories, list_events, list_tasks,
+    create_event, create_task, delete_event, delete_task, fetch_local_week_weather,
+    fetch_week_weather, fetch_windows_location, list_categories, list_events, list_tasks,
     reorder_task, update_event, update_task,
 };
 use common::{db_status, init_database};
@@ -44,7 +45,10 @@ pub fn run() {
             list_events,
             create_event,
             update_event,
-            delete_event
+            delete_event,
+            fetch_windows_location,
+            fetch_week_weather,
+            fetch_local_week_weather
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

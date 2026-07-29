@@ -465,6 +465,9 @@ button {
 }
 
 .settings-row__desc {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
   font-size: 0.82rem;
   color: var(--muted);
   line-height: 1.4;
