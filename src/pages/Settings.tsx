@@ -5,12 +5,18 @@ import {
   readLocationAllowed,
   writeLocationAllowed,
 } from "../bridge/location";
+import {
+  readKmaServiceKey,
+  writeKmaServiceKey,
+} from "../bridge/weather";
 import { PageLayout } from "../layout/PageLayout";
 
 export function Settings() {
   const [autoStart, setAutoStart] = useState(false);
   const [locationAllowed, setLocationAllowed] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [kmaKey, setKmaKey] = useState("");
+  const [kmaKeySaved, setKmaKeySaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,16 +44,19 @@ export function Settings() {
 
     async function load() {
       const allowed = readLocationAllowed();
+      const key = readKmaServiceKey();
       try {
         const enabled = await isEnabled();
         if (!cancelled) {
           setAutoStart(enabled);
           setLocationAllowed(allowed);
+          setKmaKey(key);
           setError(null);
         }
       } catch {
         if (!cancelled) {
           setLocationAllowed(allowed);
+          setKmaKey(key);
           setError("자동 시작 설정을 불러오지 못했습니다.");
         }
       } finally {
@@ -113,6 +122,12 @@ export function Settings() {
     }
   }
 
+  function handleKmaKeySave() {
+    writeKmaServiceKey(kmaKey);
+    setError(null);
+    setKmaKeySaved(true);
+  }
+
   return (
     <PageLayout eyebrow="Settings" title="설정">
       {loading ? (
@@ -161,6 +176,48 @@ export function Settings() {
               onChange={(e) => void handleLocationToggle(e.target.checked)}
             />
           </label>
+
+          <div className="settings-block">
+            <div className="settings-row settings-row--stack">
+              <span className="settings-row__text">
+                <span className="settings-row__title">기상청 API 키</span>
+                <span className="settings-row__desc">
+                  <span>
+                    공공데이터포털에서 단기예보·중기예보 활용신청 후 인증키를 입력하세요.
+                    Decoding/Encoding 키 모두 가능합니다.
+                  </span>
+                  <span>data.go.kr → 기상청_단기예보 / 중기예보 조회서비스</span>
+                </span>
+              </span>
+              <div className="settings-key">
+                <input
+                  type="password"
+                  className="field__control"
+                  value={kmaKey}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="공공데이터포털 Decoding 키"
+                  aria-label="기상청 API 키"
+                  onChange={(e) => {
+                    setKmaKey(e.target.value);
+                    setKmaKeySaved(false);
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={handleKmaKeySave}
+                >
+                  저장
+                </button>
+              </div>
+              {kmaKeySaved ? (
+                <p className="settings-save-status" role="status">
+                  저장되었습니다.
+                </p>
+              ) : null}
+            </div>
+          </div>
         </div>
       )}
     </PageLayout>

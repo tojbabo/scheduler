@@ -62,7 +62,7 @@ export function PageLayout({
     null,
   );
   const [createError, setCreateError] = useState<string | null>(null);
-  const { days: weekDays } = useWeekWeather();
+  const { days: weekDays, placeLabel, warning: weatherWarning } = useWeekWeather();
   const today = new Date();
   const todayLabel = today.toLocaleDateString("ko-KR", {
     year: "numeric",
@@ -210,6 +210,14 @@ export function PageLayout({
                 );
               })}
             </ul>
+            {placeLabel ? (
+              <p className="page-head__place">{placeLabel}</p>
+            ) : null}
+            {weatherWarning ? (
+              <p className="page-head__weather-warning" title={weatherWarning}>
+                기상청 연동 확인 필요
+              </p>
+            ) : null}
           </div>
           {showCreate ? (
             <button
