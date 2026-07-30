@@ -26,6 +26,15 @@ function dayDiff(fromKey: string, toKey: string): number {
   return Math.round((to.getTime() - from.getTime()) / 86_400_000);
 }
 
+/** 일정 종료일(없으면 시작일)이 오늘 이전인지. */
+function isPastEvent(event: Event, today: string): boolean {
+  const startKey = dateKey(event.startsAt);
+  const endKey = dateKey(event.endsAt);
+  const lastDay = endKey ?? startKey;
+  if (!lastDay) return false;
+  return lastDay < today;
+}
+
 function formatDayMeta(startsAt: string | null, endsAt: string | null): string | null {
   const startKey = dateKey(startsAt);
   const endKey = dateKey(endsAt);
@@ -33,7 +42,7 @@ function formatDayMeta(startsAt: string | null, endsAt: string | null): string |
   if (!anchorKey) return null;
 
   const n = dayDiff(todayKey(), anchorKey);
-  const dLabel = n < 0 ? `D+${-n}` : `D-${n}`;
+  const dLabel = n < 0 ? `D+${-n}` : n === 0 ? "D-DAY" : `D-${n}`;
 
   if (startKey && endKey && startKey !== endKey) {
     return `${dLabel} ~ ${dayDiff(startKey, endKey)}`;
@@ -56,7 +65,10 @@ export function EventList({ refreshKey = 0 }: EventListProps) {
 
     listEvents()
       .then((events) => {
-        if (!cancelled) setLoad({ status: "ready", events });
+        if (cancelled) return;
+        const today = todayKey();
+        const upcoming = events.filter((event) => !isPastEvent(event, today));
+        setLoad({ status: "ready", events: upcoming });
       })
       .catch((err: unknown) => {
         if (!cancelled) {
