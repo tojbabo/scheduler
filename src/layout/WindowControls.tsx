@@ -30,37 +30,36 @@ async function readBounds(): Promise<WindowBounds> {
   };
 }
 
-async function isFilledToWorkArea(): Promise<boolean> {
+/** True when the window fills the whole monitor (taskbar covered). */
+async function isFilledToMonitor(): Promise<boolean> {
   const win = getCurrentWindow();
   const monitor = await currentMonitor();
   if (monitor == null) return win.isMaximized();
 
   const [pos, size] = await Promise.all([win.outerPosition(), win.outerSize()]);
-  const work = monitor.workArea;
   return (
-    Math.abs(pos.x - work.position.x) <= TOLERANCE_PX &&
-    Math.abs(pos.y - work.position.y) <= TOLERANCE_PX &&
-    Math.abs(size.width - work.size.width) <= TOLERANCE_PX &&
-    Math.abs(size.height - work.size.height) <= TOLERANCE_PX
+    Math.abs(pos.x - monitor.position.x) <= TOLERANCE_PX &&
+    Math.abs(pos.y - monitor.position.y) <= TOLERANCE_PX &&
+    Math.abs(size.width - monitor.size.width) <= TOLERANCE_PX &&
+    Math.abs(size.height - monitor.size.height) <= TOLERANCE_PX
   );
 }
 
-/** Fill the monitor work area (excludes taskbar/docks). */
-async function fillWorkArea(): Promise<void> {
+/** Fill the entire monitor including taskbar area. */
+async function fillMonitor(): Promise<void> {
   const win = getCurrentWindow();
   const monitor = await currentMonitor();
   if (monitor == null) {
-    await win.maximize();
+    await win.setFullscreen(true);
     return;
   }
 
   const scale = monitor.scaleFactor;
-  const { position, size } = monitor.workArea;
   await win.setPosition(
-    new LogicalPosition(position.x / scale, position.y / scale),
+    new LogicalPosition(monitor.position.x / scale, monitor.position.y / scale),
   );
   await win.setSize(
-    new LogicalSize(size.width / scale, size.height / scale),
+    new LogicalSize(monitor.size.width / scale, monitor.size.height / scale),
   );
 }
 
@@ -74,7 +73,7 @@ export function WindowControls() {
     let cancelled = false;
 
     async function syncMaximized() {
-      const next = await isFilledToWorkArea();
+      const next = await isFilledToMonitor();
       if (!cancelled) setMaximized(next);
     }
 
@@ -99,7 +98,10 @@ export function WindowControls() {
 
   async function handleToggleMaximize() {
     const win = getCurrentWindow();
-    if (await isFilledToWorkArea()) {
+    if (await isFilledToMonitor()) {
+      if (await win.isFullscreen()) {
+        await win.setFullscreen(false);
+      }
       const restore = restoreBoundsRef.current;
       if (restore) {
         await win.setPosition(new LogicalPosition(restore.x, restore.y));
@@ -113,7 +115,7 @@ export function WindowControls() {
       setMaximized(false);
     } else {
       restoreBoundsRef.current = await readBounds();
-      await fillWorkArea();
+      await fillMonitor();
       setMaximized(true);
     }
   }
