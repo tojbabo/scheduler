@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { appLog } from "../bridge/log";
 import {
   deleteTask,
   listTasks,
@@ -127,20 +128,26 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
 
     listTasks()
       .then((tasks) => {
-        if (!cancelled) setLoad({ status: "ready", tasks });
+        if (!cancelled) {
+          setLoad({ status: "ready", tasks });
+          if (interactive) {
+            appLog.info("Plan", "계획 목록을 불러왔습니다.", { count: tasks.length });
+          }
+        }
       })
       .catch((err: unknown) => {
         if (!cancelled) {
           const message =
             err instanceof Error ? err.message : "계획 목록을 불러오지 못했습니다.";
           setLoad({ status: "error", message });
+          appLog.error("Plan", "계획 목록 조회 실패", err);
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [refreshKey, localRefreshKey]);
+  }, [refreshKey, localRefreshKey, interactive]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -170,10 +177,12 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
 
     void deleteTask(id)
       .then(() => {
+        appLog.info("Plan", "계획을 삭제했습니다.", { id });
         loadTasks();
       })
       .catch((err: unknown) => {
         console.error("[TaskDelete] failed", err);
+        appLog.error("Plan", "계획 삭제 실패", err);
         const message =
           err instanceof Error ? err.message : "계획을 삭제하지 못했습니다.";
         setDeleteError(message);
@@ -192,10 +201,16 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
 
     void updateTaskState(task, nextState)
       .then(() => {
+        appLog.info("Plan", "계획 상태를 변경했습니다.", {
+          id: task.id,
+          title: task.title,
+          state: nextState,
+        });
         loadTasks();
       })
       .catch((err: unknown) => {
         console.error("[TaskStateUpdate] failed", err);
+        appLog.error("Plan", "계획 상태 변경 실패", err);
         const message =
           err instanceof Error ? err.message : "계획 상태를 변경하지 못했습니다.";
         setStateError(message);
@@ -224,10 +239,15 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
 
     void updateTaskFromUiDraft(existing, draft)
       .then(() => {
+        appLog.info("Plan", "계획을 수정했습니다.", {
+          id: existing.id,
+          title: draft.title,
+        });
         loadTasks();
       })
       .catch((err: unknown) => {
         console.error("[TaskUpdate] failed", err);
+        appLog.error("Plan", "계획 수정 실패", err);
         const message =
           err instanceof Error ? err.message : "계획을 수정하지 못했습니다.";
         setEditError(message);
@@ -241,11 +261,13 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
 
     void deleteTask(id)
       .then(() => {
+        appLog.info("Plan", "계획을 삭제했습니다.", { id });
         closeEditDialog();
         loadTasks();
       })
       .catch((err: unknown) => {
         console.error("[TaskDelete] failed", err);
+        appLog.error("Plan", "계획 삭제 실패", err);
         const message =
           err instanceof Error ? err.message : "계획을 삭제하지 못했습니다.";
         setEditError(message);
@@ -275,6 +297,13 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
 
     void reorderTask({ id: moving.id, afterId })
       .then((updated) => {
+        appLog.info("Plan", "계획 순서를 변경했습니다.", {
+          id: updated.id,
+          title: updated.title,
+          fromIndex,
+          toIndex,
+          afterId,
+        });
         setLoad((current) => {
           if (current.status !== "ready") return current;
           return {
@@ -287,6 +316,7 @@ export function PlanList({ interactive = true, refreshKey = 0 }: PlanListProps) 
       })
       .catch((err: unknown) => {
         console.error("[PlanReorder] failed", err);
+        appLog.error("Plan", "계획 순서 변경 실패", err);
         const message =
           err instanceof Error ? err.message : "계획 순서를 변경하지 못했습니다.";
         setReorderError(message);

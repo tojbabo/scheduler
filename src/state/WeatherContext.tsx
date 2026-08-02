@@ -5,6 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { appLog } from "../bridge/log";
 import {
   LOCATION_ALLOWED_CHANGED,
   readLocationAllowed,
@@ -42,9 +43,11 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
           setWarning(null);
           setError(null);
         }
+        appLog.info("Weather", "위치 사용이 꺼져 있어 날씨 조회를 건너뜁니다.");
         return;
       }
       try {
+        appLog.info("Weather", "로컬 주간 날씨 조회를 요청했습니다.");
         const week = await fetchLocalWeekWeather();
         if (!cancelled) {
           setDays(week.days);
@@ -52,7 +55,19 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
           setWarning(week.weatherWarning);
           setError(null);
         }
+        if (week.weatherWarning) {
+          appLog.warn("Weather", "날씨 조회 경고", week.weatherWarning);
+        } else {
+          appLog.info(
+            "Weather",
+            "주간 날씨 조회 완료",
+            week.placeLabel
+              ? { place: week.placeLabel, days: week.days.length }
+              : { days: week.days.length },
+          );
+        }
       } catch (err: unknown) {
+        appLog.error("Weather", "날씨 조회 실패", err);
         console.error("[Weather] load failed", err);
         if (!cancelled) {
           setDays(null);
@@ -69,6 +84,7 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
     void loadWeather();
 
     function onReload() {
+      appLog.info("Weather", "설정 변경으로 날씨를 다시 조회합니다.");
       void loadWeather();
     }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createEventFromUiDraft, createTaskFromUiDraft } from "../bridge/db";
+import { appLog } from "../bridge/log";
 import {
   EventCreateDialog,
   type EventCreateDraft,
@@ -136,12 +137,17 @@ export function PageLayout({
     void createTaskFromUiDraft(draft)
       .then((task) => {
         console.log("[TaskCreate] created", task);
+        appLog.info("Plan", "계획을 추가했습니다.", {
+          id: task.id,
+          title: task.title,
+        });
         onTaskCreated?.();
       })
       .catch((err: unknown) => {
         const message =
           err instanceof Error ? err.message : "계획을 추가하지 못했습니다.";
         console.error("[TaskCreate] failed", err);
+        appLog.error("Plan", "계획 추가 실패", err);
         setCreateError(message);
       });
   }
@@ -170,12 +176,17 @@ export function PageLayout({
     void createEventFromUiDraft(draft)
       .then((event) => {
         console.log("[EventCreate] created", event);
+        appLog.info("Event", "일정을 추가했습니다.", {
+          id: event.id,
+          title: event.title,
+        });
         onEventCreated?.();
       })
       .catch((err: unknown) => {
         const message =
           err instanceof Error ? err.message : "일정을 추가하지 못했습니다.";
         console.error("[EventCreate] failed", err);
+        appLog.error("Event", "일정 추가 실패", err);
         setCreateError(message);
       });
   }
@@ -186,6 +197,13 @@ export function PageLayout({
         <div className="page-head__text">
           <p className="page-head__eyebrow">{eyebrow}</p>
           <h2 className="page-head__heading">{title}</h2>
+          <p
+            className="page-head__weather-warning"
+            title={weatherWarning ?? undefined}
+            aria-hidden={weatherWarning ? undefined : true}
+          >
+            {weatherWarning ? "기상청 연동 확인 필요" : "\u00a0"}
+          </p>
         </div>
 
         <div className="page-head__actions">
@@ -216,11 +234,6 @@ export function PageLayout({
             <p className="page-head__place" aria-hidden={placeLabel ? undefined : true}>
               {placeLabel || "\u00a0"}
             </p>
-            {weatherWarning ? (
-              <p className="page-head__weather-warning" title={weatherWarning}>
-                기상청 연동 확인 필요
-              </p>
-            ) : null}
           </div>
           {showCreate ? (
             <button

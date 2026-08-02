@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import { createEventFromUiDraft, createTaskFromUiDraft } from "../bridge/db";
+import { appLog } from "../bridge/log";
 import { EventList } from "../components/EventList";
 import {
   EventCreateDialog,
@@ -12,7 +13,7 @@ import {
 } from "../components/TaskCreateDialog";
 import { PageLayout } from "../layout/PageLayout";
 
-type MenuId = "home" | "plan" | "calendar" | "settings";
+type MenuId = "home" | "plan" | "calendar" | "logs" | "settings";
 
 type HomeProps = {
   onNavigate: (id: MenuId) => void;
@@ -49,12 +50,17 @@ export function Home({ onNavigate }: HomeProps) {
   function handleTaskSubmit(draft: TaskCreateDraft) {
     setCreateError(null);
     void createTaskFromUiDraft(draft)
-      .then(() => {
+      .then((task) => {
+        appLog.info("Plan", "계획을 추가했습니다.", {
+          id: task.id,
+          title: task.title,
+        });
         setPlanRefreshKey((key) => key + 1);
       })
       .catch((err: unknown) => {
         const message =
           err instanceof Error ? err.message : "계획을 추가하지 못했습니다.";
+        appLog.error("Plan", "계획 추가 실패", err);
         setCreateError(message);
       });
   }
@@ -62,12 +68,17 @@ export function Home({ onNavigate }: HomeProps) {
   function handleEventSubmit(draft: EventCreateDraft) {
     setCreateError(null);
     void createEventFromUiDraft(draft)
-      .then(() => {
+      .then((event) => {
+        appLog.info("Event", "일정을 추가했습니다.", {
+          id: event.id,
+          title: event.title,
+        });
         setEventRefreshKey((key) => key + 1);
       })
       .catch((err: unknown) => {
         const message =
           err instanceof Error ? err.message : "일정을 추가하지 못했습니다.";
+        appLog.error("Event", "일정 추가 실패", err);
         setCreateError(message);
       });
   }

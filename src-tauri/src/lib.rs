@@ -26,10 +26,22 @@ pub fn run() {
             let database = init_database(app.handle())?;
             app.manage(database);
 
-            // Release builds open maximized; keep a normal window size while developing.
+            // Release builds open to the monitor work area (taskbar stays visible).
             #[cfg(not(debug_assertions))]
             if let Some(window) = app.get_webview_window("main") {
-                let _ = window.maximize();
+                match window.current_monitor() {
+                    Ok(Some(monitor)) => {
+                        let scale = monitor.scale_factor();
+                        let work = monitor.work_area();
+                        let pos = work.position.to_logical::<f64>(scale);
+                        let size = work.size.to_logical::<f64>(scale);
+                        let _ = window.set_position(tauri::LogicalPosition::new(pos.x, pos.y));
+                        let _ = window.set_size(tauri::LogicalSize::new(size.width, size.height));
+                    }
+                    _ => {
+                        let _ = window.maximize();
+                    }
+                }
             }
 
             Ok(())

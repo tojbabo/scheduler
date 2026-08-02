@@ -298,6 +298,11 @@ button {
   align-items: stretch;
   justify-content: space-between;
   gap: 1rem;
+  height: 7.75rem;
+  min-height: 7.75rem;
+  max-height: 7.75rem;
+  overflow: hidden;
+  box-sizing: border-box;
   cursor: grab;
   -webkit-app-region: drag;
 }
@@ -316,6 +321,7 @@ button {
   gap: 0.45rem;
   flex: 0 0 auto;
   align-self: stretch;
+  min-height: 0;
   cursor: default;
   -webkit-app-region: no-drag;
 }
@@ -325,11 +331,14 @@ button {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.35rem;
+  flex: 0 0 auto;
 }
 
 .page-head__date {
   margin: 0;
+  height: 1.2rem;
   font-size: 0.82rem;
+  line-height: 1.2rem;
   color: var(--muted);
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -342,6 +351,7 @@ button {
   margin: 0;
   padding: 0;
   list-style: none;
+  height: 2.15rem;
 }
 
 .page-head__weather-day {
@@ -382,6 +392,7 @@ button {
 
 .page-head__place {
   margin: 0;
+  height: 1.05rem;
   min-height: 1.05rem;
   font-size: 0.72rem;
   line-height: 1.05rem;
@@ -394,23 +405,31 @@ button {
 }
 
 .page-head__weather-warning {
-  margin: 0;
-  font-size: 0.68rem;
+  margin: 0.45rem 0 0;
+  height: 1.05rem;
+  min-height: 1.05rem;
+  font-size: 0.78rem;
+  line-height: 1.05rem;
   color: var(--danger);
   letter-spacing: -0.01em;
-  white-space: nowrap;
-  max-width: 14rem;
+  max-width: 28rem;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
 }
 
 .page-head__actions .btn {
   cursor: pointer;
+  flex: 0 0 auto;
 }
 
 .page-head__eyebrow {
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.35rem;
+  height: 1rem;
   font-size: 0.78rem;
+  line-height: 1rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent);
@@ -418,9 +437,14 @@ button {
 
 .page-head__heading {
   margin: 0;
+  height: 2.1rem;
   font-size: 1.65rem;
   font-weight: 650;
+  line-height: 2.1rem;
   letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .page__body {
@@ -593,6 +617,106 @@ button {
   gap: 0.55rem;
 }
 
+/* —— App logs —— */
+.app-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 0;
+}
+
+.app-log__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.app-log__count {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.app-log__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+.app-log__item {
+  padding: 0.7rem 0.15rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-log__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.7rem;
+  margin-bottom: 0.3rem;
+}
+
+.app-log__time {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.app-log__level {
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.app-log__item--info .app-log__level {
+  color: var(--accent);
+  border-color: var(--accent-soft);
+  background: var(--accent-soft);
+}
+
+.app-log__item--warn .app-log__level {
+  color: var(--accent-hover);
+  border-color: var(--accent-soft);
+  background: var(--hover-tint);
+}
+
+.app-log__item--error .app-log__level {
+  color: var(--danger);
+  border-color: var(--danger-soft);
+  background: var(--danger-soft);
+}
+
+.app-log__source {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.app-log__message {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.app-log__detail {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
 
 /* —— Home split —— */
 .home-split {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
+import { appLog } from "../bridge/log";
 import {
   fetchWindowsLocation,
   readLocationAllowed,
@@ -26,10 +27,16 @@ export function Settings() {
 
     async function loadLocation() {
       setLocationLoading(true);
+      appLog.info("Settings", "Windows 위치 조회를 요청했습니다.");
       try {
-        await fetchWindowsLocation();
+        const loc = await fetchWindowsLocation();
         if (!cancelled) setError(null);
+        appLog.info("Settings", "Windows 위치 조회 완료", {
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+        });
       } catch (err: unknown) {
+        appLog.error("Settings", "Windows 위치 조회 실패", err);
         if (!cancelled) {
           setError(
             err instanceof Error
@@ -84,7 +91,16 @@ export function Settings() {
         await disable();
       }
       setAutoStart(await isEnabled());
-    } catch {
+      appLog.info(
+        "Settings",
+        next ? "자동 시작을 켰습니다." : "자동 시작을 껐습니다.",
+      );
+    } catch (err: unknown) {
+      appLog.error(
+        "Settings",
+        next ? "자동 시작 켜기 실패" : "자동 시작 끄기 실패",
+        err,
+      );
       setError(
         next
           ? "자동 시작을 켜지 못했습니다."
@@ -100,6 +116,10 @@ export function Settings() {
     setError(null);
     writeLocationAllowed(next);
     setLocationAllowed(next);
+    appLog.info(
+      "Settings",
+      next ? "Windows 위치 사용을 켰습니다." : "Windows 위치 사용을 껐습니다.",
+    );
 
     if (!next) {
       setLocationLoading(false);
@@ -108,9 +128,15 @@ export function Settings() {
     }
 
     setLocationLoading(true);
+    appLog.info("Settings", "Windows 위치 조회를 요청했습니다.");
     try {
-      await fetchWindowsLocation();
+      const loc = await fetchWindowsLocation();
+      appLog.info("Settings", "Windows 위치 조회 완료", {
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+      });
     } catch (err: unknown) {
+      appLog.error("Settings", "Windows 위치 조회 실패", err);
       setError(
         err instanceof Error
           ? err.message
@@ -126,6 +152,12 @@ export function Settings() {
     writeKmaServiceKey(kmaKey);
     setError(null);
     setKmaKeySaved(true);
+    appLog.info(
+      "Settings",
+      kmaKey.trim()
+        ? "기상청 API 키를 저장했습니다."
+        : "기상청 API 키를 비웠습니다.",
+    );
   }
 
   return (
