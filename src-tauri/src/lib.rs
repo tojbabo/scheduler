@@ -26,21 +26,10 @@ pub fn run() {
             let database = init_database(app.handle())?;
             app.manage(database);
 
-            // Release builds open filling the whole monitor (covers taskbar).
+            // Release builds open fullscreen so the Windows taskbar is hidden.
             #[cfg(not(debug_assertions))]
             if let Some(window) = app.get_webview_window("main") {
-                match window.current_monitor() {
-                    Ok(Some(monitor)) => {
-                        let scale = monitor.scale_factor();
-                        let pos = monitor.position().to_logical::<f64>(scale);
-                        let size = monitor.size().to_logical::<f64>(scale);
-                        let _ = window.set_position(tauri::LogicalPosition::new(pos.x, pos.y));
-                        let _ = window.set_size(tauri::LogicalSize::new(size.width, size.height));
-                    }
-                    _ => {
-                        let _ = window.set_fullscreen(true);
-                    }
-                }
+                let _ = window.set_fullscreen(true);
             }
 
             Ok(())

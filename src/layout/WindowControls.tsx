@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  currentMonitor,
   getCurrentWindow,
   LogicalPosition,
   LogicalSize,
@@ -12,8 +11,6 @@ type WindowBounds = {
   width: number;
   height: number;
 };
-
-const TOLERANCE_PX = 6;
 
 async function readBounds(): Promise<WindowBounds> {
   const win = getCurrentWindow();
@@ -30,50 +27,17 @@ async function readBounds(): Promise<WindowBounds> {
   };
 }
 
-/** True when the window fills the whole monitor (taskbar covered). */
-async function isFilledToMonitor(): Promise<boolean> {
-  const win = getCurrentWindow();
-  const monitor = await currentMonitor();
-  if (monitor == null) return win.isMaximized();
-
-  const [pos, size] = await Promise.all([win.outerPosition(), win.outerSize()]);
-  return (
-    Math.abs(pos.x - monitor.position.x) <= TOLERANCE_PX &&
-    Math.abs(pos.y - monitor.position.y) <= TOLERANCE_PX &&
-    Math.abs(size.width - monitor.size.width) <= TOLERANCE_PX &&
-    Math.abs(size.height - monitor.size.height) <= TOLERANCE_PX
-  );
-}
-
-/** Fill the entire monitor including taskbar area. */
-async function fillMonitor(): Promise<void> {
-  const win = getCurrentWindow();
-  const monitor = await currentMonitor();
-  if (monitor == null) {
-    await win.setFullscreen(true);
-    return;
-  }
-
-  const scale = monitor.scaleFactor;
-  await win.setPosition(
-    new LogicalPosition(monitor.position.x / scale, monitor.position.y / scale),
-  );
-  await win.setSize(
-    new LogicalSize(monitor.size.width / scale, monitor.size.height / scale),
-  );
-}
-
 export function WindowControls() {
   const [maximized, setMaximized] = useState(false);
   const restoreBoundsRef = useRef<WindowBounds | null>(null);
 
   useEffect(() => {
     const win = getCurrentWindow();
-    let unlisten: (() => void) | undefined;
+    let unlistenResize: (() => void) | undefined;
     let cancelled = false;
 
     async function syncMaximized() {
-      const next = await isFilledToMonitor();
+      const next = await win.isFullscreen();
       if (!cancelled) setMaximized(next);
     }
 
@@ -87,27 +51,23 @@ export function WindowControls() {
           fn();
           return;
         }
-        unlisten = fn;
+        unlistenResize = fn;
       });
 
     return () => {
       cancelled = true;
-      unlisten?.();
+      unlistenResize?.();
     };
   }, []);
 
   async function handleToggleMaximize() {
     const win = getCurrentWindow();
-    if (await isFilledToMonitor()) {
-      if (await win.isFullscreen()) {
-        await win.setFullscreen(false);
-      }
+    if (await win.isFullscreen()) {
+      await win.setFullscreen(false);
       const restore = restoreBoundsRef.current;
       if (restore) {
         await win.setPosition(new LogicalPosition(restore.x, restore.y));
         await win.setSize(new LogicalSize(restore.width, restore.height));
-      } else if (await win.isMaximized()) {
-        await win.unmaximize();
       } else {
         await win.setSize(new LogicalSize(1200, 800));
         await win.center();
@@ -115,7 +75,9 @@ export function WindowControls() {
       setMaximized(false);
     } else {
       restoreBoundsRef.current = await readBounds();
-      await fillMonitor();
+      // Borderless size-to-monitor still leaves the Windows taskbar on top;
+      // fullscreen is what actually hides it.
+      await win.setFullscreen(true);
       setMaximized(true);
     }
   }
