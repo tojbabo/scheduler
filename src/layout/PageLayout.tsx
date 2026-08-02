@@ -238,10 +238,12 @@ export function PageLayout({
           {showCreate ? (
             <button
               type="button"
-              className="btn btn--primary"
+              className="page-head__add"
               onClick={openCreateDialog}
+              aria-label={createLabel}
+              title={createLabel}
             >
-              {createLabel}
+              +
             </button>
           ) : null}
         </div>
