@@ -195,24 +195,27 @@ export function PageLayout({
             </time>
             <ul className="page-head__weather" aria-label="이번 주 날씨">
               {WEEKDAY_LABELS.map((label, i) => {
-                const dayWeather = weekDays?.[i];
-                const condition = dayWeather?.condition ?? "clear";
-                const weatherLabel = dayWeather?.label ?? "맑음";
+                const dayWeather = weekDays?.[i] ?? null;
+                const weatherLabel = dayWeather?.label ?? null;
                 return (
                   <li
                     key={label.offset}
                     className={`page-head__weather-day${i === 0 ? " page-head__weather-day--today" : ""}`}
-                    title={`${label.abbr} · ${weatherLabel}`}
+                    title={
+                      weatherLabel
+                        ? `${label.abbr} · ${weatherLabel}`
+                        : label.abbr
+                    }
                   >
-                    <WeatherIcon condition={condition} />
+                    <WeatherIcon condition={dayWeather?.condition ?? null} />
                     <span className="page-head__weather-abbr">{label.abbr}</span>
                   </li>
                 );
               })}
             </ul>
-            {placeLabel ? (
-              <p className="page-head__place">{placeLabel}</p>
-            ) : null}
+            <p className="page-head__place" aria-hidden={placeLabel ? undefined : true}>
+              {placeLabel || "\u00a0"}
+            </p>
             {weatherWarning ? (
               <p className="page-head__weather-warning" title={weatherWarning}>
                 기상청 연동 확인 필요
@@ -262,7 +265,15 @@ export function PageLayout({
   );
 }
 
-function WeatherIcon({ condition }: { condition: string }) {
+function WeatherIcon({ condition }: { condition: string | null }) {
+  if (condition == null) {
+    return (
+      <span className="page-head__weather-placeholder" aria-hidden="true">
+        ·
+      </span>
+    );
+  }
+
   switch (condition) {
     case "partly_cloudy":
       return <PartlyCloudyIcon />;

@@ -401,40 +401,43 @@ async fn fetch_mid_land_daily(
     Ok(out)
 }
 
-fn build_kma_url(base: &str, service_key: &str, params: &[(&str, &str)]) -> String {
-    let mut url = format!("{base}?serviceKey={service_key}");
-    for (name, value) in params {
-        url.push('&');
-        url.push_str(name);
-        url.push('=');
-        url.push_str(&urlencoding::encode(value));
+fn normalize_kma_service_key(service_key: &str) -> String {
+    let trimmed = service_key.trim();
+    if trimmed.is_empty() {
+        return String::new();
     }
-    url
+    // Encoding 키(%..)로 저장된 경우 한 번 디코딩해 raw(Decoding) 키로 맞춘다.
+    if trimmed.contains('%') {
+        urlencoding::decode(trimmed)
+            .map(|s| s.into_owned())
+            .unwrap_or_else(|_| trimmed.to_string())
+    } else {
+        trimmed.to_string()
+    }
 }
 
-fn service_key_candidates(service_key: &str) -> Vec<String> {
-    let trimmed = service_key.trim();
-    let mut keys = Vec::new();
-    if trimmed.is_empty() {
-        return keys;
+fn build_kma_url(
+    base: &str,
+    service_key: &str,
+    params: &[(&str, &str)],
+) -> Result<reqwest::Url, String> {
+    let decoded_key = normalize_kma_service_key(service_key);
+    if decoded_key.is_empty() {
+        return Err("기상청 API 키가 비어 있습니다.".into());
     }
 
-    if trimmed.contains('%') {
-        // Encoding 키 그대로
-        keys.push(trimmed.to_string());
-        if let Ok(decoded) = urlencoding::decode(trimmed) {
-            let decoded = decoded.into_owned();
-            keys.push(urlencoding::encode(&decoded).into_owned());
+    // query_pairs_mut가 serviceKey를 정확히 한 번만 percent-encode 한다.
+    // (미리 Encoding된 키를 문자열에 붙인 뒤 Url::parse 하면 % → %25 이중 인코딩으로 401이 난다.)
+    let mut url = reqwest::Url::parse(base)
+        .map_err(|e| format!("기상청 API URL이 올바르지 않습니다: {e}"))?;
+    {
+        let mut query = url.query_pairs_mut();
+        query.append_pair("serviceKey", &decoded_key);
+        for (name, value) in params {
+            query.append_pair(name, value);
         }
-    } else {
-        // Decoding 키 → Encoding
-        keys.push(urlencoding::encode(trimmed).into_owned());
-        // 일부 게이트웨이는 raw도 허용
-        keys.push(trimmed.to_string());
     }
-
-    keys.dedup();
-    keys
+    Ok(url)
 }
 
 async fn fetch_kma_envelope_with_key_fallback(
@@ -444,31 +447,16 @@ async fn fetch_kma_envelope_with_key_fallback(
     params: &[(&str, &str)],
     label: &str,
 ) -> Result<KmaEnvelope, String> {
-    let mut last_err = format!("기상청 {label} 요청에 실패했습니다.");
-    for key in service_key_candidates(service_key) {
-        let url = build_kma_url(base, &key, params);
-        let response = match client.get(&url).send().await {
-            Ok(response) => response,
-            Err(err) => {
-                last_err = format!("기상청 {label} 요청에 실패했습니다: {err}");
-                continue;
-            }
-        };
+    let url = build_kma_url(base, service_key, params)?;
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("기상청 {label} 요청에 실패했습니다: {e}"))?;
 
-        match read_kma_envelope(response, label).await {
-            Ok(envelope) => {
-                if let Err(err) = ensure_kma_ok(&envelope.response.header, label) {
-                    last_err = err;
-                    continue;
-                }
-                return Ok(envelope);
-            }
-            Err(err) => {
-                last_err = err;
-            }
-        }
-    }
-    Err(last_err)
+    let envelope = read_kma_envelope(response, label).await?;
+    ensure_kma_ok(&envelope.response.header, label)?;
+    Ok(envelope)
 }
 
 async fn read_kma_envelope(
