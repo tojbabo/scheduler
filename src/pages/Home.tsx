@@ -113,7 +113,9 @@ export function Home({ onNavigate }: HomeProps) {
               +
             </button>
           </div>
-          <PlanList interactive={false} refreshKey={planRefreshKey} />
+          <div className="home-panel__content">
+            <PlanList interactive={false} refreshKey={planRefreshKey} />
+          </div>
         </section>
 
         <div className="home-split__divider" aria-hidden="true" />
@@ -139,7 +141,9 @@ export function Home({ onNavigate }: HomeProps) {
               +
             </button>
           </div>
-          <EventList refreshKey={eventRefreshKey} />
+          <div className="home-panel__content">
+            <EventList refreshKey={eventRefreshKey} />
+          </div>
         </section>
       </div>
 
