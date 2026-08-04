@@ -751,9 +751,11 @@ button {
 
 /* —— Home split —— */
 .home-split {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
+  gap: 0.75rem;
+  padding: 0.35rem;
   flex: 1;
   min-height: 0;
   min-width: 0;
@@ -764,19 +766,35 @@ button {
   min-width: 0;
   min-height: 0;
   height: 100%;
-  padding: 0.25rem 1.25rem;
+  padding: 1.1rem 1.35rem;
   border: none;
-  border-radius: 0;
+  border-radius: 12px;
   background: transparent;
   overflow: auto;
+  transition: background-color 0.15s ease;
 }
 
-.home-panel + .home-panel {
-  border-left: 1px solid var(--border);
+.home-split__divider {
+  position: absolute;
+  top: 0.7rem;
+  bottom: 0.7rem;
+  left: 50%;
+  width: 1px;
+  background: var(--border);
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .home-panel--clickable {
   cursor: pointer;
+}
+
+.home-panel--clickable:hover {
+  background: color-mix(in srgb, var(--hover-tint) 45%, transparent);
+}
+
+.home-panel--clickable:hover .home-panel__title {
+  color: var(--accent);
 }
 
 .home-panel--clickable:focus-visible {
@@ -798,6 +816,7 @@ button {
   font-weight: 650;
   letter-spacing: -0.01em;
   color: var(--text);
+  transition: color 0.15s ease;
 }
 
 .home-panel__add {
@@ -843,9 +862,14 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .home-panel + .home-panel {
-    border-left: none;
-    border-top: 1px solid var(--border);
+  .home-split__divider {
+    top: 50%;
+    right: 0.7rem;
+    bottom: auto;
+    left: 0.7rem;
+    width: auto;
+    height: 1px;
+    transform: translateY(-50%);
   }
 }
 

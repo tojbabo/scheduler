@@ -116,6 +116,8 @@ export function Home({ onNavigate }: HomeProps) {
           <PlanList interactive={false} refreshKey={planRefreshKey} />
         </section>
 
+        <div className="home-split__divider" aria-hidden="true" />
+
         <section
           className="home-panel home-panel--clickable"
           aria-labelledby="home-upcoming-heading"
